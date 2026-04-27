@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currency — ABAGJA ORBIT</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    /* ── CONVERTER ── */
+    .converter-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: end;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 650px) {
+      .converter-row {
+        grid-template-columns: 1fr;
+      }
+      .swap-btn-wrap { display: flex; justify-content: center; }
+    }
+    .conv-group label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 6px;
+    }
+    .conv-input-wrap {
+      position: relative;
+    }
+    .conv-input-wrap .currency-code {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text3);
+      pointer-events: none;
+    }
+    .conv-amount {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--gold);
+      font-family: 'DM Mono', monospace;
+      font-size: 1.3rem;
+      padding: 12px 55px 12px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .conv-amount:focus { border-color: var(--gold); }
+    .conv-select {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      font-size: 0.85rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .conv-select:focus { border-color: var(--gold); }
+
+    .swap-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 1rem;
+      transition: all 0.22s var(--spring);
+      flex-shrink: 0;
+    }
+    .swap-btn:hover {
+      color: var(--gold);
+      border-color: var(--border2);
+      transform: rotate(180deg);
+    }
+
+    .result-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .result-box .result-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.6rem;
+      color: var(--gold);
+      font-weight: 500;
+    }
+    .result-box .result-label {
+      font-size: 0.75rem;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+    .result-box .rate-info {
+      text-align: right;
+    }
+    .result-box .rate-main {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text2);
+    }
+    .result-box .rate-updated {
+      font-size: 0.68rem;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    /* ── QUICK RATES ── */
+    .rates-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    @media (max-width: 700px) { .rates-grid { grid-template-columns: 1fr 1fr; } }
+
+    .rate-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      transition: all 0.22s var(--ease);
+      cursor: pointer;
+    }
+    .rate-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-2px);
+    }
+    .rate-card.selected {
+      border-color: var(--gold);
+      background: var(--gold-dim);
+    }
+    .rate-card .rc-pair {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .rate-card .rc-rate {
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .rate-card .rc-change {
+      font-size: 0.7rem;
+      margin-top: 3px;
+    }
+    .rc-change.up   { color: var(--green); }
+    .rc-change.down { color: var(--red); }
+
+    /* ── CHART ── */
+    .chart-wrap {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+
+    /* ── STATUS ── */
+    .fetch-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+    }
+    .fetch-status .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-ring 2s ease infinite;
+    }
+    .fetch-status.loading .dot { background: var(--gold); }
+    .fetch-status.error   .dot { background: var(--red); animation: none; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a class="nav-logo" href="index.html">ABAGJA <span>ORBIT</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html"><span class="nav-icon">⌂</span> Home</a></li>
+      <li><a href="clock.html"><span class="nav-icon">◷</span> Time</a></li>
+      <li><a href="currency.html" class="active"><span class="nav-icon">◈</span> Currency</a></li>
+      <li><a href="calculator.html"><span class="nav-icon">⊞</span> Calculator</a></li>
+    </ul>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header anim-up">
+        <div class="eyebrow">Module 02</div>
+        <h1>Currency</h1>
+        <p>IDR exchange rates &amp; live converter</p>
+      </div>
+
+      <!-- STATUS -->
+      <div style="margin-bottom:1.5rem" class="anim-up">
+        <span class="fetch-status loading" id="fetch-status">
+          <span class="dot"></span> Fetching rates...
+        </span>
+      </div>
+
+      <!-- CONVERTER CARD -->
+      <div class="card anim-up" style="margin-bottom:1rem">
+        <div class="card-title">Converter</div>
+        <div class="converter-row">
+          <div class="conv-group">
+            <label>Amount</label>
+            <div class="conv-input-wrap">
+              <input class="conv-amount" id="conv-amount" type="number" value="1000000" min="0">
+              <span class="currency-code" id="from-code">IDR</span>
+            </div>
+            <select class="conv-select" id="conv-from">
+              <option value="IDR">🇮🇩 IDR — Indonesian Rupiah</option>
+              <option value="USD">🇺🇸 USD — US Dollar</option>
+              <option value="EUR">🇪🇺 EUR — Euro</option>
+              <option value="GBP">🇬🇧 GBP — British Pound</option>
+              <option value="SGD">🇸🇬 SGD — Singapore Dollar</option>
+              <option value="JPY">🇯🇵 JPY — Japanese Yen</option>
+              <option value="CHF">🇨🇭 CHF — Swiss Franc</option>
+              <option value="AUD">🇦🇺 AUD — Australian Dollar</option>
+            </select>
+          </div>
+          <div class="swap-btn-wrap">
+            <button class="swap-btn" id="swap-btn" title="Swap currencies">⇄</button>
+          </div>
+          <div class="conv-group">
+            <label>Converted To</label>
+            <div class="conv-input-wrap">
+              <input class="conv-amount" id="conv-result" readonly style="color:var(--text2);cursor:default">
+              <span class="currency-code" id="to-code">USD</span>
+            </div>
+            <select class="conv-select" id="conv-to">
+              <option value="USD">🇺🇸 USD — US Dollar</option>
+              <option value="IDR">🇮🇩 IDR — Indonesian Rupiah</option>
+              <option value="EUR">🇪🇺 EUR — Euro</option>
+              <option value="GBP">🇬🇧 GBP — British Pound</option>
+              <option value="SGD">🇸🇬 SGD — Singapore Dollar</option>
+              <option value="JPY">🇯🇵 JPY — Japanese Yen</option>
+              <option value="CHF">🇨🇭 CHF — Swiss Franc</option>
+              <option value="AUD">🇦🇺 AUD — Australian Dollar</option>
+            </select>
+          </div>
+        </div>
+        <div class="result-box">
+          <div>
+            <div class="result-val" id="result-big">—</div>
+            <div class="result-label" id="result-label">Enter amount above</div>
+          </div>
+          <div class="rate-info">
+            <div class="rate-main" id="rate-main">—</div>
+            <div class="rate-updated" id="rate-updated">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK RATES -->
+      <div class="card anim-up" style="margin-bottom:1rem">
+        <div class="card-title">IDR Quick Rates</div>
+        <div class="rates-grid" id="rates-grid">
+          <div class="rate-card"><div class="rc-pair">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- CHART -->
+      <div class="card anim-up">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+          <div class="card-title" style="margin:0">IDR / <span id="chart-pair-label">USD</span> — Simulated History</div>
+          <div style="display:flex;gap:6px">
+            <button class="tab-btn active" data-range="7">7D</button>
+            <button class="tab-btn" data-range="30">30D</button>
+            <button class="tab-btn" data-range="90">90D</button>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="rate-chart"></canvas>
+        </div>
+        <p style="font-size:0.65rem;color:var(--text3);margin-top:8px;font-family:'DM Mono',monospace">
+          ⚠ Chart shows simulated historical trend. Real-time rate from open API.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // ── STATE ──────────────────────────────────────────
+    let rates = {};
+    let lastUpdated = null;
+    let chart = null;
+    let chartRange = 7;
+    let chartCurrency = 'USD';
+
+    const CURRENCIES = [
+      { code: 'USD', flag: '🇺🇸', name: 'US Dollar' },
+      { code: 'EUR', flag: '🇪🇺', name: 'Euro' },
+      { code: 'GBP', flag: '🇬🇧', name: 'British Pound' },
+      { code: 'SGD', flag: '🇸🇬', name: 'Singapore Dollar' },
+      { code: 'JPY', flag: '🇯🇵', name: 'Japanese Yen' },
+      { code: 'CHF', flag: '🇨🇭', name: 'Swiss Franc' },
+    ];
+
+    // ── FETCH RATES ───────────────────────────────────
+    async function fetchRates() {
+      setStatus('loading', 'Fetching rates...');
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/IDR');
+        const data = await res.json();
+        if (data.result !== 'success') throw new Error('API error');
+        rates = data.rates;
+        lastUpdated = new Date();
+        setStatus('ok', 'Live · updated ' + lastUpdated.toLocaleTimeString());
+        renderQuickRates();
+        convert();
+        renderChart();
+      } catch (e) {
+        // Fallback rates (approximate)
+        rates = { USD: 0.0000635, EUR: 0.0000585, GBP: 0.0000503, SGD: 0.0000855, JPY: 0.00931, CHF: 0.0000571, AUD: 0.0000975, IDR: 1 };
+        lastUpdated = new Date();
+        setStatus('error', 'Offline mode — using fallback rates');
+        renderQuickRates();
+        convert();
+        renderChart();
+      }
+    }
+
+    function setStatus(type, msg) {
+      const el = document.getElementById('fetch-status');
+      el.className = 'fetch-status ' + type;
+      el.innerHTML = `<span class="dot"></span> ${msg}`;
+    }
+
+    // ── QUICK RATES ───────────────────────────────────
+    function renderQuickRates() {
+      const grid = document.getElementById('rates-grid');
+      grid.innerHTML = CURRENCIES.map(c => {
+        const r = rates[c.code];
+        if (!r) return '';
+        const idrPerUnit = r ? (1 / r).toFixed(0) : '—';
+        const numIdr = parseInt(idrPerUnit.replace(/,/g, ''));
+        const display = numIdr >= 1000
+          ? 'Rp ' + numIdr.toLocaleString('id-ID')
+          : '— ';
+        return `<div class="rate-card ${c.code === chartCurrency ? 'selected' : ''}" data-code="${c.code}" onclick="selectChart('${c.code}')">
+          <div class="rc-pair">${c.flag} IDR / ${c.code}</div>
+          <div class="rc-rate">1 ${c.code} = ${display}</div>
+          <div class="rc-change up">↑ live rate</div>
+        </div>`;
+      }).join('');
+    }
+
+    function selectChart(code) {
+      chartCurrency = code;
+      document.getElementById('chart-pair-label').textContent = code;
+      renderQuickRates();
+      renderChart();
+    }
+
+    // ── CONVERTER ─────────────────────────────────────
+    function convert() {
+      const from = document.getElementById('conv-from').value;
+      const to = document.getElementById('conv-to').value;
+      const amount = parseFloat(document.getElementById('conv-amount').value) || 0;
+      document.getElementById('from-code').textContent = from;
+      document.getElementById('to-code').textContent = to;
+
+      if (!rates[from] || !rates[to]) return;
+
+      // Convert via IDR base
+      const inIdr = from === 'IDR' ? amount : amount / rates[from];
+      const result = to === 'IDR' ? inIdr : inIdr * rates[to];
+
+      const fmt = (n, cur) => {
+        if (cur === 'IDR') return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+        if (cur === 'JPY') return '¥' + Math.round(n).toLocaleString();
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, maximumFractionDigits: 4 }).format(n);
+      };
+
+      document.getElementById('conv-result').value = result.toFixed(to === 'IDR' ? 0 : 4);
+      document.getElementById('result-big').textContent = fmt(result, to);
+      document.getElementById('result-label').textContent = `${fmt(amount, from)} → ${to}`;
+
+      const unitRate = from === 'IDR'
+        ? `1 IDR = ${(rates[to]).toFixed(6)} ${to}`
+        : `1 ${from} = ${fmt(1 / rates[from], 'IDR')}`;
+      document.getElementById('rate-main').textContent = unitRate;
+      document.getElementById('rate-updated').textContent = lastUpdated
+        ? 'Updated ' + lastUpdated.toLocaleTimeString()
+        : '—';
+    }
+
+    document.getElementById('conv-amount').addEventListener('input', convert);
+    document.getElementById('conv-from').addEventListener('change', convert);
+    document.getElementById('conv-to').addEventListener('change', () => {
+      chartCurrency = document.getElementById('conv-to').value;
+      document.getElementById('chart-pair-label').textContent = chartCurrency;
+      renderQuickRates();
+      renderChart();
+      convert();
+    });
+
+    document.getElementById('swap-btn').addEventListener('click', () => {
+      const from = document.getElementById('conv-from');
+      const to = document.getElementById('conv-to');
+      const tmp = from.value;
+      from.value = to.value;
+      to.value = tmp;
+      convert();
+    });
+
+    // ── CHART ─────────────────────────────────────────
+    function generateHistory(days, baseRate) {
+      const labels = [];
+      const data = [];
+      let r = baseRate * (1 + (Math.random() * 0.04 - 0.02));
+      const now = new Date();
+      for (let i = days; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        r = r * (1 + (Math.random() * 0.012 - 0.006));
+        data.push(parseFloat(r.toFixed(6)));
+      }
+      return { labels, data };
+    }
+
+    function renderChart() {
+      const baseRate = rates[chartCurrency] ? 1 / rates[chartCurrency] : 15700;
+      const { labels, data } = generateHistory(chartRange, baseRate);
+
+      const ctx = document.getElementById('rate-chart').getContext('2d');
+      if (chart) chart.destroy();
+
+      const grad = ctx.createLinearGradient(0, 0, 0, 260);
+      grad.addColorStop(0, 'rgba(232,184,75,0.25)');
+      grad.addColorStop(1, 'rgba(232,184,75,0)');
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: `IDR per 1 ${chartCurrency}`,
+            data,
+            borderColor: '#e8b84b',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#e8b84b',
+            tension: 0.4,
+            fill: true,
+            backgroundColor: grad,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1c1814',
+              borderColor: 'rgba(232,184,75,0.3)',
+              borderWidth: 1,
+              titleColor: '#a8997a',
+              bodyColor: '#e8b84b',
+              padding: 10,
+              callbacks: {
+                label: ctx => ` Rp ${ctx.raw.toLocaleString('id-ID')}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#6a5e48', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 8 },
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              border: { color: 'rgba(255,255,255,0.06)' }
+            },
+            y: {
+              ticks: {
+                color: '#6a5e48',
+                font: { family: 'DM Mono', size: 10 },
+                callback: v => 'Rp ' + Math.round(v).toLocaleString('id-ID')
+              },
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              border: { color: 'rgba(255,255,255,0.06)' }
+            }
+          }
+        }
+      });
+    }
+
+    // Range buttons
+    document.querySelectorAll('[data-range]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        chartRange = parseInt(btn.dataset.range);
+        renderChart();
+      });
+    });
+
+    // ── INIT ──────────────────────────────────────────
+    fetchRates();
+    setInterval(fetchRates, 5 * 60 * 1000); // refresh every 5 min
+  </script>
+</body>
+</html>

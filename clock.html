@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time — ABAGJA ORBIT</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── WORLD CLOCK ── */
+    .clock-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 700px) { .clock-grid { grid-template-columns: 1fr; } }
+
+    .clock-card {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.28s var(--ease);
+    }
+    .clock-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border2);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+    }
+    .clock-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .clock-card:hover::after { opacity: 0.5; }
+
+    .cc-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .cc-flag { font-size: 1.5rem; }
+    .cc-info {}
+    .cc-city {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .cc-tz {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--text3);
+      text-transform: uppercase;
+    }
+    .cc-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 2.8rem;
+      font-weight: 500;
+      color: var(--gold);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .cc-colon {
+      animation: tick 1s step-end infinite;
+    }
+    .cc-date {
+      font-size: 0.75rem;
+      color: var(--text3);
+      font-weight: 300;
+    }
+    .cc-diff {
+      position: absolute;
+      top: 1.5rem; right: 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text3);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+    .cc-analog {
+      position: absolute;
+      bottom: 1rem; right: 1.2rem;
+      width: 48px; height: 48px;
+      opacity: 0.25;
+    }
+    .cc-analog circle { fill: none; stroke: var(--gold); stroke-width: 1.2; }
+    .cc-analog .hand-h { stroke: var(--gold); stroke-width: 2.5; stroke-linecap: round; }
+    .cc-analog .hand-m { stroke: var(--text2); stroke-width: 1.8; stroke-linecap: round; }
+    .cc-analog .hand-s { stroke: var(--gold2); stroke-width: 1; stroke-linecap: round; }
+
+    /* ── TIMER ── */
+    .timer-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    .big-display {
+      font-family: 'DM Mono', monospace;
+      font-size: clamp(3rem, 10vw, 5.5rem);
+      font-weight: 300;
+      color: var(--text);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .big-display.running { color: var(--gold); }
+    .big-display.alert   { color: var(--red); animation: pulse-ring 0.6s ease infinite; }
+
+    .timer-inputs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .timer-input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .timer-input-group label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text3);
+    }
+    .timer-num-input {
+      width: 72px;
+      text-align: center;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 1.4rem;
+      padding: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .timer-num-input:focus { border-color: var(--gold); }
+    .timer-sep {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.4rem;
+      color: var(--text3);
+      margin-top: 14px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ── STOPWATCH LAPS ── */
+    .laps-list {
+      margin-top: 1rem;
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lap-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      animation: fadeUp 0.2s var(--ease) both;
+    }
+    .lap-item .lap-num { color: var(--text3); }
+    .lap-item .lap-time { color: var(--gold); }
+    .lap-item .lap-delta { color: var(--text3); font-size: 0.7rem; }
+    .lap-item.fastest .lap-time { color: var(--green); }
+    .lap-item.slowest .lap-time { color: var(--red); }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a class="nav-logo" href="index.html">ABAGJA <span>ORBIT</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html"><span class="nav-icon">⌂</span> Home</a></li>
+      <li><a href="clock.html" class="active"><span class="nav-icon">◷</span> Time</a></li>
+      <li><a href="currency.html"><span class="nav-icon">◈</span> Currency</a></li>
+      <li><a href="calculator.html"><span class="nav-icon">⊞</span> Calculator</a></li>
+    </ul>
+  </nav>
+
+  <div class="page">
+    <div class="container">
+      <div class="page-header anim-up">
+        <div class="eyebrow">Module 01</div>
+        <h1>Time</h1>
+        <p>World clocks, timer &amp; stopwatch</p>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs anim-up">
+        <button class="tab-btn active" data-tab="clocks">🌍 World Clocks</button>
+        <button class="tab-btn" data-tab="timer">⏱ Timer</button>
+        <button class="tab-btn" data-tab="stopwatch">⏲ Stopwatch</button>
+      </div>
+
+      <!-- ═══ WORLD CLOCKS ═══ -->
+      <div class="tab-content active" id="tab-clocks">
+        <div class="clock-grid">
+          <!-- Indonesia -->
+          <div class="clock-card anim-up" id="cc-id">
+            <div class="cc-diff" id="diff-id">UTC+7</div>
+            <div class="cc-top">
+              <span class="cc-flag">🇮🇩</span>
+              <div class="cc-info">
+                <div class="cc-city">Jakarta, Indonesia</div>
+                <div class="cc-tz">Asia/Jakarta · WIB</div>
+              </div>
+            </div>
+            <div class="cc-time" id="time-id">00<span class="cc-colon">:</span>00<span class="cc-colon">:</span>00</div>
+            <div class="cc-date" id="date-id">—</div>
+            <svg class="cc-analog" id="analog-id" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="22"/>
+              <line class="hand-h" id="hh-id" x1="24" y1="24" x2="24" y2="11"/>
+              <line class="hand-m" id="hm-id" x1="24" y1="24" x2="24" y2="7"/>
+              <line class="hand-s" id="hs-id" x1="24" y1="24" x2="24" y2="5"/>
+              <circle cx="24" cy="24" r="2" fill="var(--gold)" opacity="0.6"/>
+            </svg>
+          </div>
+
+          <!-- Ireland -->
+          <div class="clock-card anim-up" id="cc-ie">
+            <div class="cc-diff" id="diff-ie">UTC+1</div>
+            <div class="cc-top">
+              <span class="cc-flag">🇮🇪</span>
+              <div class="cc-info">
+                <div class="cc-city">Dublin, Ireland</div>
+                <div class="cc-tz">Europe/Dublin · IST</div>
+              </div>
+            </div>
+            <div class="cc-time" id="time-ie">00<span class="cc-colon">:</span>00<span class="cc-colon">:</span>00</div>
+            <div class="cc-date" id="date-ie">—</div>
+            <svg class="cc-analog" id="analog-ie" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="22"/>
+              <line class="hand-h" id="hh-ie" x1="24" y1="24" x2="24" y2="11"/>
+              <line class="hand-m" id="hm-ie" x1="24" y1="24" x2="24" y2="7"/>
+              <line class="hand-s" id="hs-ie" x1="24" y1="24" x2="24" y2="5"/>
+              <circle cx="24" cy="24" r="2" fill="var(--gold)" opacity="0.6"/>
+            </svg>
+          </div>
+
+          <!-- New York -->
+          <div class="clock-card anim-up" id="cc-ny">
+            <div class="cc-diff" id="diff-ny">UTC-4</div>
+            <div class="cc-top">
+              <span class="cc-flag">🇺🇸</span>
+              <div class="cc-info">
+                <div class="cc-city">New York, USA</div>
+                <div class="cc-tz">America/New_York · EDT</div>
+              </div>
+            </div>
+            <div class="cc-time" id="time-ny">00<span class="cc-colon">:</span>00<span class="cc-colon">:</span>00</div>
+            <div class="cc-date" id="date-ny">—</div>
+            <svg class="cc-analog" id="analog-ny" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="22"/>
+              <line class="hand-h" id="hh-ny" x1="24" y1="24" x2="24" y2="11"/>
+              <line class="hand-m" id="hm-ny" x1="24" y1="24" x2="24" y2="7"/>
+              <line class="hand-s" id="hs-ny" x1="24" y1="24" x2="24" y2="5"/>
+              <circle cx="24" cy="24" r="2" fill="var(--gold)" opacity="0.6"/>
+            </svg>
+          </div>
+
+          <!-- Switzerland -->
+          <div class="clock-card anim-up" id="cc-ch">
+            <div class="cc-diff" id="diff-ch">UTC+2</div>
+            <div class="cc-top">
+              <span class="cc-flag">🇨🇭</span>
+              <div class="cc-info">
+                <div class="cc-city">Zürich, Switzerland</div>
+                <div class="cc-tz">Europe/Zurich · CEST</div>
+              </div>
+            </div>
+            <div class="cc-time" id="time-ch">00<span class="cc-colon">:</span>00<span class="cc-colon">:</span>00</div>
+            <div class="cc-date" id="date-ch">—</div>
+            <svg class="cc-analog" id="analog-ch" viewBox="0 0 48 48">
+              <circle cx="24" cy="24" r="22"/>
+              <line class="hand-h" id="hh-ch" x1="24" y1="24" x2="24" y2="11"/>
+              <line class="hand-m" id="hm-ch" x1="24" y1="24" x2="24" y2="7"/>
+              <line class="hand-s" id="hs-ch" x1="24" y1="24" x2="24" y2="5"/>
+              <circle cx="24" cy="24" r="2" fill="var(--gold)" opacity="0.6"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TIMER ═══ -->
+      <div class="tab-content" id="tab-timer">
+        <div class="card">
+          <div class="timer-wrap">
+            <div class="big-display" id="timer-display">00:00:00</div>
+            <div class="timer-inputs" id="timer-inputs">
+              <div class="timer-input-group">
+                <label>Hours</label>
+                <input class="timer-num-input" id="t-h" type="number" min="0" max="99" value="0">
+              </div>
+              <div class="timer-sep">:</div>
+              <div class="timer-input-group">
+                <label>Minutes</label>
+                <input class="timer-num-input" id="t-m" type="number" min="0" max="59" value="0">
+              </div>
+              <div class="timer-sep">:</div>
+              <div class="timer-input-group">
+                <label>Seconds</label>
+                <input class="timer-num-input" id="t-s" type="number" min="0" max="59" value="0">
+              </div>
+            </div>
+            <div class="ctrl-row">
+              <button class="btn btn-primary" id="timer-start">▶ Start</button>
+              <button class="btn btn-ghost" id="timer-pause" disabled>⏸ Pause</button>
+              <button class="btn btn-ghost" id="timer-reset">↺ Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ STOPWATCH ═══ -->
+      <div class="tab-content" id="tab-stopwatch">
+        <div class="card">
+          <div class="timer-wrap">
+            <div class="big-display" id="sw-display">00:00:00<span style="font-size:0.4em;color:var(--text3)" id="sw-ms">.00</span></div>
+            <div class="ctrl-row" style="margin-bottom:1rem">
+              <button class="btn btn-primary" id="sw-start">▶ Start</button>
+              <button class="btn btn-ghost" id="sw-lap" disabled>◎ Lap</button>
+              <button class="btn btn-ghost" id="sw-reset">↺ Reset</button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span class="card-title" style="margin:0">Laps</span>
+            <button class="btn btn-ghost" id="sw-clear-laps" style="padding:4px 12px;font-size:0.72rem">Clear</button>
+          </div>
+          <div class="laps-list" id="laps-list">
+            <div style="text-align:center;color:var(--text3);font-size:0.8rem;padding:1rem">No laps yet</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // ── TABS ──────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── WORLD CLOCKS ─────────────────────────────────
+    const clocks = [
+      { id: 'id', tz: 'Asia/Jakarta' },
+      { id: 'ie', tz: 'Europe/Dublin' },
+      { id: 'ny', tz: 'America/New_York' },
+      { id: 'ch', tz: 'Europe/Zurich' },
+    ];
+
+    function setAnalog(prefix, date, tz) {
+      const local = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz, hour: 'numeric', minute: 'numeric', second: 'numeric',
+        hour12: false
+      }).formatToParts(date);
+      const p = {};
+      local.forEach(x => { if (x.type !== 'literal') p[x.type] = parseInt(x.value); });
+      const h = (p.hour % 12 + p.minute / 60) / 12 * 360;
+      const m = (p.minute + p.second / 60) / 60 * 360;
+      const s = p.second / 60 * 360;
+      setHand(`hh-${prefix}`, 24, 24, 13, h);
+      setHand(`hm-${prefix}`, 24, 24, 7, m);
+      setHand(`hs-${prefix}`, 24, 24, 5, s);
+    }
+
+    function setHand(id, cx, cy, length, deg) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const r = (deg - 90) * Math.PI / 180;
+      el.setAttribute('x2', cx + length * Math.cos(r));
+      el.setAttribute('y2', cy + length * Math.sin(r));
+    }
+
+    function tickClocks() {
+      const now = new Date();
+      clocks.forEach(c => {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: c.tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        }).formatToParts(now);
+        const p = {};
+        parts.forEach(x => { if (x.type !== 'literal') p[x.type] = x.value; });
+
+        const el = document.getElementById('time-' + c.id);
+        if (el) el.innerHTML = `${p.hour}<span class="cc-colon">:</span>${p.minute}<span class="cc-colon">:</span>${p.second}`;
+
+        const de = document.getElementById('date-' + c.id);
+        if (de) de.textContent = formatDate(now, c.tz);
+
+        setAnalog(c.id, now, c.tz);
+      });
+    }
+    tickClocks();
+    setInterval(tickClocks, 1000);
+
+    // ── TIMER ─────────────────────────────────────────
+    let timerInterval = null;
+    let timerRemaining = 0;
+    let timerTotal = 0;
+    let timerRunning = false;
+
+    const timerDisplay = document.getElementById('timer-display');
+
+    function updateTimerDisplay(s) {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      timerDisplay.textContent = `${pad(h)}:${pad(m)}:${pad(sec)}`;
+    }
+
+    document.getElementById('timer-start').addEventListener('click', () => {
+      if (timerRunning) return;
+      const h = parseInt(document.getElementById('t-h').value) || 0;
+      const m = parseInt(document.getElementById('t-m').value) || 0;
+      const s = parseInt(document.getElementById('t-s').value) || 0;
+      if (!timerRemaining) {
+        timerTotal = h * 3600 + m * 60 + s;
+        timerRemaining = timerTotal;
+      }
+      if (timerRemaining <= 0) return;
+      timerRunning = true;
+      timerDisplay.classList.add('running');
+      timerDisplay.classList.remove('alert');
+      document.getElementById('timer-inputs').style.opacity = '0.4';
+      document.getElementById('timer-inputs').style.pointerEvents = 'none';
+      document.getElementById('timer-pause').disabled = false;
+      timerInterval = setInterval(() => {
+        timerRemaining--;
+        updateTimerDisplay(timerRemaining);
+        if (timerRemaining <= 0) {
+          clearInterval(timerInterval);
+          timerRunning = false;
+          timerDisplay.classList.remove('running');
+          timerDisplay.classList.add('alert');
+        }
+      }, 1000);
+    });
+
+    document.getElementById('timer-pause').addEventListener('click', () => {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerDisplay.classList.remove('running');
+      document.getElementById('timer-pause').disabled = true;
+    });
+
+    document.getElementById('timer-reset').addEventListener('click', () => {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerRemaining = 0;
+      timerTotal = 0;
+      timerDisplay.classList.remove('running', 'alert');
+      timerDisplay.textContent = '00:00:00';
+      document.getElementById('t-h').value = 0;
+      document.getElementById('t-m').value = 0;
+      document.getElementById('t-s').value = 0;
+      document.getElementById('timer-inputs').style.opacity = '';
+      document.getElementById('timer-inputs').style.pointerEvents = '';
+      document.getElementById('timer-pause').disabled = true;
+    });
+
+    // ── STOPWATCH ─────────────────────────────────────
+    let swInterval = null;
+    let swRunning = false;
+    let swElapsed = 0;
+    let swLapTime = 0;
+    let swLaps = [];
+
+    const swDisplay = document.getElementById('sw-display');
+    const swMs = document.getElementById('sw-ms');
+
+    function updateSwDisplay() {
+      const total = swElapsed;
+      const h = Math.floor(total / 360000);
+      const m = Math.floor((total % 360000) / 6000);
+      const s = Math.floor((total % 6000) / 100);
+      const ms = total % 100;
+      swDisplay.childNodes[0].textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+      swMs.textContent = `.${pad(ms)}`;
+    }
+
+    document.getElementById('sw-start').addEventListener('click', () => {
+      if (swRunning) return;
+      swRunning = true;
+      document.getElementById('sw-start').disabled = true;
+      document.getElementById('sw-lap').disabled = false;
+      swDisplay.classList.add('running');
+      swInterval = setInterval(() => {
+        swElapsed++;
+        updateSwDisplay();
+      }, 10);
+    });
+
+    document.getElementById('sw-lap').addEventListener('click', () => {
+      if (!swRunning) return;
+      const lapDelta = swElapsed - swLapTime;
+      swLaps.push({ total: swElapsed, delta: lapDelta });
+      swLapTime = swElapsed;
+      renderLaps();
+    });
+
+    document.getElementById('sw-reset').addEventListener('click', () => {
+      clearInterval(swInterval);
+      swRunning = false;
+      swElapsed = 0;
+      swLapTime = 0;
+      swLaps = [];
+      swDisplay.classList.remove('running');
+      swDisplay.childNodes[0].textContent = '00:00:00';
+      swMs.textContent = '.00';
+      document.getElementById('sw-start').disabled = false;
+      document.getElementById('sw-lap').disabled = true;
+      renderLaps();
+    });
+
+    document.getElementById('sw-clear-laps').addEventListener('click', () => {
+      swLaps = [];
+      swLapTime = swElapsed;
+      renderLaps();
+    });
+
+    function fmtSw(v) {
+      const h = Math.floor(v / 360000);
+      const m = Math.floor((v % 360000) / 6000);
+      const s = Math.floor((v % 6000) / 100);
+      const ms = v % 100;
+      return `${pad(h)}:${pad(m)}:${pad(s)}.${pad(ms)}`;
+    }
+
+    function renderLaps() {
+      const list = document.getElementById('laps-list');
+      if (!swLaps.length) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:0.8rem;padding:1rem">No laps yet</div>';
+        return;
+      }
+      const deltas = swLaps.map(l => l.delta);
+      const fastest = Math.min(...deltas);
+      const slowest = Math.max(...deltas);
+      list.innerHTML = [...swLaps].reverse().map((l, ri) => {
+        const i = swLaps.length - 1 - ri;
+        const cls = deltas.length > 1
+          ? (l.delta === fastest ? 'fastest' : l.delta === slowest ? 'slowest' : '')
+          : '';
+        return `<div class="lap-item ${cls}">
+          <span class="lap-num">Lap ${i + 1}</span>
+          <span class="lap-time">${fmtSw(l.delta)}</span>
+          <span class="lap-delta">${fmtSw(l.total)}</span>
+        </div>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
