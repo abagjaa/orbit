@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator — Abagja Orbit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg0:#0a0908;--bg1:#13110f;--bg2:#1c1814;--bg3:#252018;--border:rgba(232,184,75,0.12);--border2:rgba(232,184,75,0.26);--gold:#e8b84b;--gold2:#c4873a;--gold-dim:rgba(232,184,75,0.10);--text:#f0ead8;--text2:#a8997a;--text3:#6a5e48;--red:#d9534a;--green:#7dba84;--radius:14px;--radius-lg:20px;--ease:cubic-bezier(0.4,0,0.2,1);--spring:cubic-bezier(0.34,1.56,0.64,1)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Sora',sans-serif;background:var(--bg0);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+    body::before{content:'';position:fixed;inset:0;opacity:.028;pointer-events:none;z-index:9999;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:52px;background:rgba(10,9,8,.88);backdrop-filter:blur(24px);border-bottom:1px solid rgba(232,184,75,0.08)}
+    .back-btn{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;letter-spacing:.14em;opacity:.75;transition:all .2s}
+    .back-btn:hover{opacity:1}
+    .back-btn .arr{color:var(--text3);transition:transform .2s}
+    .back-btn:hover .arr{transform:translateX(-3px)}
+    .page-badge{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);letter-spacing:.22em;text-transform:uppercase}
+
+    .page{padding-top:52px}
+    .container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem 5rem}
+    .page-header{margin-bottom:2rem}
+    .page-header h1{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:600;letter-spacing:-.01em}
+    .page-header p{margin-top:4px;font-size:.82rem;color:var(--text3);font-weight:300}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .au{animation:fadeUp .44s var(--ease) both}
+    .d1{animation-delay:.07s}.d2{animation-delay:.14s}
+
+    /* LAYOUT */
+    .layout{display:grid;grid-template-columns:320px 1fr;gap:1.5rem;align-items:start}
+    @media(max-width:780px){.layout{grid-template-columns:1fr}}
+
+    /* CALCULATOR */
+    .calc-wrap{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;position:sticky;top:68px}
+
+    /* SCREEN */
+    .calc-screen{padding:1.4rem 1.4rem 1rem;background:var(--bg2);border-bottom:1px solid var(--border);min-height:110px;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+    .calc-expr{font-family:'DM Mono',monospace;font-size:.76rem;color:var(--text3);text-align:right;min-height:1.3em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .calc-disp{font-family:'DM Mono',monospace;font-size:2.5rem;font-weight:300;color:var(--text);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .15s;cursor:text;user-select:text}
+    .calc-disp.hasil{color:var(--gold)}
+    /* paste hint */
+    .paste-hint{position:absolute;top:8px;right:12px;font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);opacity:0;transition:opacity .2s;pointer-events:none}
+    .calc-screen:hover .paste-hint{opacity:1}
+
+    /* KEYPAD */
+    .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+    .key{border:none;height:62px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:500;cursor:pointer;background:var(--bg1);color:var(--text);transition:background .12s;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent}
+    .key:hover{background:var(--bg2)}
+    .key:active{background:var(--bg3)}
+    .key.fn{background:var(--bg2);color:var(--text2);font-size:.83rem}
+    .key.fn:hover{background:var(--bg3);color:var(--gold)}
+    .key.op{background:var(--bg2);color:var(--gold2);font-size:1.1rem}
+    .key.op:hover{background:var(--bg3);color:var(--gold)}
+    .key.eq{background:var(--gold);color:var(--bg0);font-size:1.2rem;grid-row:span 2}
+    .key.eq:hover{background:#f0c45a}
+    .key.zero{grid-column:span 2;justify-content:flex-start;padding-left:24px}
+
+    /* HISTORY */
+    .hist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+    .card-title{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text3)}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:100px;font-family:'Sora',sans-serif;font-size:.75rem;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);transition:all .2s var(--ease)}
+    .btn:hover{color:var(--gold);border-color:var(--border2);background:var(--gold-dim)}
+    .hist-empty{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:.8rem}
+    .hist-empty .ei{font-size:1.5rem;margin-bottom:8px;opacity:.35}
+
+    .hitem{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;margin-bottom:.6rem;transition:all .2s var(--ease);animation:fadeUp .2s var(--ease) both}
+    .hitem:hover{border-color:var(--border2);transform:translateY(-1px)}
+    .hitem-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px}
+    .hitem-expr{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);flex:1;word-break:break-all}
+    .hitem-res{font-family:'DM Mono',monospace;font-size:1.05rem;color:var(--gold);font-weight:500;cursor:pointer;flex-shrink:0;transition:color .15s}
+    .hitem-res:hover{color:#f0c45a}
+    .hitem-note-disp{font-size:.76rem;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;padding:3px 0;transition:color .15s;margin-top:4px}
+    .hitem-note-disp:hover{color:var(--gold)}
+    .hitem-note-disp.empty{color:var(--text3);font-style:italic}
+    .note-icon{font-size:.68rem;color:var(--text3)}
+    .hitem-note-inp{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Sora',sans-serif;font-size:.78rem;padding:7px 10px;outline:none;margin-top:4px;transition:border-color .2s}
+    .hitem-note-inp:focus{border-color:var(--gold)}
+    .hitem-actions{display:flex;gap:6px;margin-top:6px;align-items:center}
+    .hbtn{background:none;border:none;cursor:pointer;font-size:.68rem;padding:3px 8px;border-radius:100px;transition:all .15s;font-family:'Sora',sans-serif;color:var(--text3)}
+    .hbtn:hover{color:var(--gold);background:var(--gold-dim)}
+    .hbtn.del:hover{color:var(--red);background:rgba(217,83,74,.1)}
+    .htime{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text3);margin-left:auto}
+
+    /* PASTE TOAST */
+    .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--border2);border-radius:100px;padding:10px 22px;font-size:.78rem;color:var(--gold);font-family:'DM Mono',monospace;opacity:0;transition:all .32s var(--spring);pointer-events:none;z-index:999;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg0)}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:99px}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-btn" href="index.html"><span class="arr">←</span> Abagja Orbit</a>
+  <span class="page-badge">Kalkulator</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="page">
+  <div class="container">
+
+    <div class="page-header au">
+      <h1>Kalkulator</h1>
+      <p>Lengkap dengan riwayat yang bisa dikasih catatan. Bisa paste angka juga.</p>
+    </div>
+
+    <div class="layout">
+
+      <!-- KALKULATOR -->
+      <div class="calc-wrap au">
+        <div class="calc-screen" id="calc-screen">
+          <div class="paste-hint">Ctrl+V untuk paste angka</div>
+          <div class="calc-expr" id="c-expr"></div>
+          <div class="calc-disp" id="c-disp">0</div>
+        </div>
+        <div class="keypad">
+          <button class="key fn" data-a="clear">AC</button>
+          <button class="key fn" data-a="sign">+/−</button>
+          <button class="key fn" data-a="pct">%</button>
+          <button class="key op" data-a="op" data-v="÷">÷</button>
+
+          <button class="key" data-a="num" data-v="7">7</button>
+          <button class="key" data-a="num" data-v="8">8</button>
+          <button class="key" data-a="num" data-v="9">9</button>
+          <button class="key op" data-a="op" data-v="×">×</button>
+
+          <button class="key" data-a="num" data-v="4">4</button>
+          <button class="key" data-a="num" data-v="5">5</button>
+          <button class="key" data-a="num" data-v="6">6</button>
+          <button class="key op" data-a="op" data-v="−">−</button>
+
+          <button class="key" data-a="num" data-v="1">1</button>
+          <button class="key" data-a="num" data-v="2">2</button>
+          <button class="key" data-a="num" data-v="3">3</button>
+          <button class="key op" data-a="op" data-v="+">+</button>
+
+          <button class="key zero" data-a="num" data-v="0">0</button>
+          <button class="key" data-a="dec">.</button>
+          <button class="key eq" data-a="eq">=</button>
+        </div>
+      </div>
+
+      <!-- RIWAYAT -->
+      <div class="au d1">
+        <div class="hist-header">
+          <div class="card-title">Riwayat Kalkulasi</div>
+          <button class="btn" id="clear-hist">Hapus Semua</button>
+        </div>
+        <div id="hist-list">
+          <div class="hist-empty">
+            <div class="ei">🧮</div>
+            Hasil kalkulasi muncul di sini.<br>
+            <span style="font-size:.7rem;opacity:.5">Klik hasil untuk dipakai ulang.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── STATE ──
+  var disp = '0';
+  var expr = '';
+  var op1 = null;
+  var curOp = null;
+  var waitOp = false;
+  var equaled = false;
+  var hist = JSON.parse(localStorage.getItem('orbit-calc') || '[]');
+
+  var dispEl = document.getElementById('c-disp');
+  var exprEl = document.getElementById('c-expr');
+
+  // ── TOAST ──
+  var toastTO = null;
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTO);
+    toastTO = setTimeout(function(){t.classList.remove('show');}, 3000);
+  }
+
+  // ── SAVE / RENDER HISTORY ──
+  function saveHist() { localStorage.setItem('orbit-calc', JSON.stringify(hist)); }
+
+  function fmtN(n) {
+    return Number.isInteger(n) ? n.toString() : parseFloat(n.toFixed(8)).toString();
+  }
+
+  function setDisp(v) {
+    disp = String(v);
+    var n = parseFloat(disp);
+    dispEl.textContent = isNaN(n) ? disp : n.toLocaleString('id-ID', {maximumFractionDigits:10});
+  }
+
+  // ── KEYPAD ──
+  document.querySelectorAll('.key').forEach(function(k) {
+    k.addEventListener('click', function() {
+      var a = k.dataset.a, v = k.dataset.v;
+      if (a === 'num')   inputNum(v);
+      else if (a === 'op')    inputOp(v);
+      else if (a === 'eq')    doEq();
+      else if (a === 'clear') doClear();
+      else if (a === 'sign')  doSign();
+      else if (a === 'pct')   doPct();
+      else if (a === 'dec')   inputDec();
+    });
+  });
+
+  // ── KEYBOARD + PASTE ──
+  document.addEventListener('keydown', function(e) {
+    // Don't intercept when typing in history note inputs
+    if (e.target.classList.contains('hitem-note-inp')) return;
+
+    if (e.key >= '0' && e.key <= '9') inputNum(e.key);
+    else if (e.key === '.')  inputDec();
+    else if (e.key === '+')  inputOp('+');
+    else if (e.key === '-')  inputOp('−');
+    else if (e.key === '*')  inputOp('×');
+    else if (e.key === '/') { e.preventDefault(); inputOp('÷'); }
+    else if (e.key === 'Enter' || e.key === '=') doEq();
+    else if (e.key === 'Escape') doClear();
+    else if (e.key === 'Backspace') doBk();
+    else if (e.key === '%') doPct();
+  });
+
+  // PASTE — support Ctrl+V anywhere on page
+  document.addEventListener('paste', function(e) {
+    if (e.target.classList.contains('hitem-note-inp')) return;
+    e.preventDefault();
+    var raw = (e.clipboardData || window.clipboardData).getData('text');
+    // strip non-numeric except dot, minus, comma
+    var cleaned = raw.replace(/,/g, '.').replace(/[^\d.\-]/g, '').trim();
+    var n = parseFloat(cleaned);
+    if (!isNaN(n) && cleaned !== '') {
+      dispEl.classList.remove('hasil');
+      disp = String(n);
+      setDisp(n);
+      waitOp = false;
+      equaled = false;
+      showToast('📋 Angka di-paste: ' + n.toLocaleString('id-ID'));
+    } else {
+      showToast('⚠ Bukan angka yang valid buat di-paste');
+    }
+  });
+
+  // ── CALC LOGIC ──
+  function inputNum(n) {
+    dispEl.classList.remove('hasil');
+    if (waitOp || equaled) {
+      if (equaled) { expr = ''; equaled = false; }
+      setDisp(n);
+      waitOp = false;
+    } else {
+      setDisp(disp === '0' ? n : disp + n);
+    }
+  }
+
+  function inputDec() {
+    dispEl.classList.remove('hasil');
+    if (waitOp) { setDisp('0.'); waitOp = false; return; }
+    if (!disp.includes('.')) setDisp(disp + '.');
+  }
+
+  function inputOp(op) {
+    dispEl.classList.remove('hasil');
+    var cur = parseFloat(disp);
+    if (op1 !== null && !waitOp) {
+      var r = compute(op1, cur, curOp);
+      setDisp(r); op1 = r;
+    } else {
+      op1 = cur;
+    }
+    expr = disp + ' ' + op;
+    exprEl.textContent = expr;
+    curOp = op; waitOp = true; equaled = false;
+  }
+
+  function doEq() {
+    if (curOp === null || waitOp) return;
+    var cur = parseFloat(disp);
+    var r = compute(op1, cur, curOp);
+    var fullExpr = fmtN(op1) + ' ' + curOp + ' ' + fmtN(cur) + ' =';
+    exprEl.textContent = fullExpr;
+    setDisp(r);
+    dispEl.classList.add('hasil');
+
+    hist.unshift({
+      id: Date.now(),
+      expr: fullExpr,
+      result: r,
+      note: '',
+      time: new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})
+    });
+    saveHist();
+    renderHist();
+
+    op1 = null; curOp = null; waitOp = false; equaled = true;
+  }
+
+  function doClear() {
+    disp = '0'; expr = ''; op1 = null; curOp = null; waitOp = false; equaled = false;
+    dispEl.textContent = '0'; dispEl.classList.remove('hasil');
+    exprEl.textContent = '';
+  }
+
+  function doSign() { setDisp(parseFloat(disp) * -1); }
+  function doPct()  { setDisp(parseFloat(disp) / 100); }
+  function doBk()   { if (disp.length > 1) setDisp(disp.slice(0,-1)); else setDisp('0'); }
+
+  function compute(a, b, op) {
+    var R = function(n){ return Math.round(n * 1e10) / 1e10; };
+    if (op === '+') return R(a + b);
+    if (op === '−') return R(a - b);
+    if (op === '×') return R(a * b);
+    if (op === '÷') return b !== 0 ? R(a / b) : 'Error';
+  }
+
+  // ── REUSE RESULT ──
+  function reuseResult(val) {
+    setDisp(val);
+    dispEl.classList.add('hasil');
+    op1 = val; waitOp = true; equaled = false;
+  }
+
+  // ── NOTE FUNCTIONS ──
+  function editNote(id) {
+    document.getElementById('nd-'+id).style.display = 'none';
+    var inp = document.getElementById('ni-'+id);
+    inp.style.display = 'block';
+    inp.focus(); inp.select();
+  }
+
+  function saveNote(e, id) {
+    if (e.key !== 'Enter' && e.type !== 'blur') return;
+    var val = document.getElementById('ni-'+id).value.trim();
+    var idx = hist.findIndex(function(h){ return h.id === id; });
+    if (idx !== -1) { hist[idx].note = val; saveHist(); renderHist(); }
+  }
+
+  function deleteHist(id) {
+    var el = document.getElementById('hi-'+id);
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(20px)';
+      el.style.transition = 'all .2s';
+    }
+    hist = hist.filter(function(h){ return h.id !== id; });
+    saveHist();
+    setTimeout(renderHist, 200);
+  }
+
+  document.getElementById('clear-hist').addEventListener('click', function() {
+    if (!hist.length) return;
+    hist = []; saveHist(); renderHist();
+  });
+
+  // ── RENDER HISTORY ──
+  function renderHist() {
+    var list = document.getElementById('hist-list');
+    if (!hist.length) {
+      list.innerHTML = '<div class="hist-empty"><div class="ei">🧮</div>Hasil kalkulasi muncul di sini.<br><span style="font-size:.7rem;opacity:.5">Klik hasil untuk dipakai ulang.</span></div>';
+      return;
+    }
+    list.innerHTML = hist.map(function(h) {
+      return '<div class="hitem" id="hi-' + h.id + '">' +
+        '<div class="hitem-top">' +
+          '<div class="hitem-expr">' + h.expr + '</div>' +
+          '<div class="hitem-res" onclick="reuseResult(' + h.result + ')" title="Pakai ulang">' + fmtN(h.result) + '</div>' +
+        '</div>' +
+        '<div id="nd-' + h.id + '" class="hitem-note-disp ' + (h.note ? '' : 'empty') + '" onclick="editNote(' + h.id + ')">' +
+          '<span class="note-icon">' + (h.note ? '📝' : '+') + '</span>' +
+          '<span>' + (h.note || 'Tambah catatan...') + '</span>' +
+        '</div>' +
+        '<input type="text" id="ni-' + h.id + '" class="hitem-note-inp" style="display:none" ' +
+          'placeholder="Ketik catatan, tekan Enter..." value="' + h.note + '" ' +
+          'onkeydown="saveNote(event,' + h.id + ')" onblur="saveNote({key:\'Enter\'},' + h.id + ')">' +
+        '<div class="hitem-actions">' +
+          '<button class="hbtn del" onclick="deleteHist(' + h.id + ')">✕ Hapus</button>' +
+          '<span class="htime">' + h.time + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  renderHist();
+</script>
+</body>
+</html>
