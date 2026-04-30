@@ -425,5 +425,47 @@
   fetchRates();
   setInterval(fetchRates, 5 * 60 * 1000);
 </script>
+<div id="c-dot"></div>
+<div id="c-ring"></div>
+<script>
+(function(){
+  var dot=document.getElementById("c-dot");
+  var ring=document.getElementById("c-ring");
+  var isMobile=function(){return window.matchMedia("(max-width: 768px)").matches;};
+  var mx=-999,my=-999,rx=-999,ry=-999,raf=null;
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function loop(){
+    rx=lerp(rx,mx,0.12); ry=lerp(ry,my,0.12);
+    ring.style.left=rx+"px"; ring.style.top=ry+"px";
+    raf=requestAnimationFrame(loop);
+  }
+  document.addEventListener("mousemove",function(e){
+    if(isMobile())return;
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+"px"; dot.style.top=my+"px";
+    dot.style.opacity="1"; ring.style.opacity="1";
+    if(!raf)loop();
+  });
+  document.addEventListener("mouseleave",function(){
+    dot.style.opacity="0"; ring.style.opacity="0";
+  });
+  document.addEventListener("mouseover",function(e){
+    if(isMobile())return;
+    var t=e.target.closest("a,button,.btn,.tab-btn");
+    dot.classList.toggle("hovering",!!t);
+    ring.classList.toggle("hovering",!!t);
+  });
+  document.addEventListener("touchstart",function(e){
+    Array.from(e.changedTouches).forEach(function(touch){
+      var r=document.createElement("div");
+      r.className="ripple-tap";
+      r.style.left=touch.clientX+"px";
+      r.style.top=touch.clientY+"px";
+      document.body.appendChild(r);
+      setTimeout(function(){r.remove();},750);
+    });
+  },{passive:true});
+})();
+</script>
 </body>
 </html>
