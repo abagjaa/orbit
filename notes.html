@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notes · Abagja Orbit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg0:#0a0908;--bg1:#13110f;--bg2:#1c1814;--bg3:#252018;
+      --border:rgba(232,184,75,0.12);--border2:rgba(232,184,75,0.26);--border3:rgba(232,184,75,0.45);
+      --gold:#e8b84b;--gold2:#c4873a;--gold-dim:rgba(232,184,75,0.10);
+      --text:#f0ead8;--text2:#a8997a;--text3:#6a5e48;
+      --red:#d9534a;--green:#7dba84;--blue:#6aa8d4;
+      --purple:#a884d4;--orange:#d48a4a;
+      --radius:14px;--radius-lg:22px;
+      --ease:cubic-bezier(0.4,0,0.2,1);--spring:cubic-bezier(0.34,1.56,0.64,1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{font-family:'Sora',sans-serif;background:var(--bg0);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    body::before{content:'';position:fixed;inset:0;opacity:.03;pointer-events:none;z-index:9999;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+    /* TOPBAR */
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:52px;background:rgba(9,8,10,0.6);backdrop-filter:blur(24px);border-bottom:1px solid rgba(232,184,75,0.06)}
+    .topbar-left{display:flex;align-items:center;gap:1rem}
+    .topbar-back{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text3);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;transition:color .2s}
+    .topbar-back:hover{color:var(--gold)}
+    .topbar-logo{font-family:'Cormorant Garamond',serif;font-size:.9rem;font-weight:600;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;opacity:.55}
+    .topbar-right{display:flex;align-items:center;gap:1rem}
+    .sync-status{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+    .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .3s}
+    .sync-dot.synced{background:var(--green);animation:livep 2.4s ease infinite}
+    .sync-dot.syncing{background:var(--gold);animation:gdot .8s ease infinite}
+    .sync-dot.error{background:var(--red)}
+    @keyframes gdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.6)}}
+    @keyframes livep{0%,100%{opacity:1}50%{opacity:.25}}
+    .topbar-time{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.07em}
+
+    /* LAYOUT */
+    .app{display:flex;padding-top:52px;height:100vh;overflow:hidden}
+
+    /* SIDEBAR */
+    .sidebar{width:300px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg1);overflow:hidden;transition:width .3s var(--ease)}
+    .sidebar.collapsed{width:0}
+    @media(max-width:768px){.sidebar{position:fixed;left:0;top:52px;bottom:0;z-index:150;transform:translateX(-100%);transition:transform .3s var(--ease);width:280px}.sidebar.mobile-open{transform:translateX(0)}}
+
+    .sidebar-header{padding:1.2rem 1.2rem .8rem;flex-shrink:0}
+    .sidebar-search{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;transition:border-color .2s}
+    .sidebar-search:focus-within{border-color:var(--border2)}
+    .sidebar-search input{background:none;border:none;outline:none;color:var(--text);font-family:'Sora',sans-serif;font-size:.78rem;flex:1;min-width:0}
+    .sidebar-search input::placeholder{color:var(--text3)}
+    .sidebar-search .s-icon{color:var(--text3);font-size:.85rem;flex-shrink:0}
+
+    .sidebar-tags{padding:.5rem 1.2rem;display:flex;gap:.4rem;flex-wrap:wrap}
+    .tag-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .18s;white-space:nowrap}
+    .tag-chip:hover,.tag-chip.active{border-color:var(--border2);color:var(--gold);background:var(--gold-dim)}
+    .tag-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+    .notes-list{flex:1;overflow-y:auto;padding:.5rem .6rem 1rem}
+    .notes-list::-webkit-scrollbar{width:3px}
+    .notes-list::-webkit-scrollbar-track{background:transparent}
+    .notes-list::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:99px}
+
+    .note-item{padding:.9rem 1rem;border-radius:var(--radius);cursor:pointer;transition:all .2s var(--ease);border:1px solid transparent;margin-bottom:.35rem;position:relative}
+    .note-item:hover{background:var(--bg2);border-color:var(--border)}
+    .note-item.active{background:var(--bg2);border-color:var(--border2)}
+    .note-item-title{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+    .note-item-preview{font-size:.7rem;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+    .note-item-meta{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+    .note-item-date{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);letter-spacing:.06em}
+    .note-item-tags{display:flex;gap:3px}
+    .note-tag-mini{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .note-pinned-icon{font-size:.65rem;color:var(--gold);opacity:.7}
+    .note-item.pinned{border-left:2px solid rgba(232,184,75,0.3)}
+
+    .sidebar-new-btn{margin:.6rem;flex-shrink:0}
+    .new-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;background:var(--gold-dim);border:1px solid var(--border2);border-radius:var(--radius);color:var(--gold);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:all .22s var(--ease)}
+    .new-btn:hover{background:rgba(232,184,75,0.16);box-shadow:0 4px 16px rgba(232,184,75,0.1)}
+
+    /* MAIN EDITOR */
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+    .editor-toolbar{padding:.7rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:rgba(9,8,10,0.3);backdrop-filter:blur(12px);flex-shrink:0}
+    .tb-group{display:flex;align-items:center;gap:.3rem}
+    .tb-sep{width:1px;height:20px;background:var(--border);margin:0 .2rem}
+    .tb-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:none;background:none;color:var(--text3);cursor:pointer;font-size:.82rem;transition:all .18s;font-family:'DM Mono',monospace}
+    .tb-btn:hover{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
+    .tb-btn.active{background:var(--gold-dim);color:var(--gold);border:1px solid var(--border2)}
+    .tb-btn[title]:hover::after{content:attr(title);position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg3);color:var(--text2);padding:3px 8px;border-radius:6px;font-size:.55rem;white-space:nowrap;pointer-events:none;z-index:10;font-family:'DM Mono',monospace;letter-spacing:.08em}
+    .tb-btn[title]{position:relative}
+
+    .editor-note-meta{padding:.8rem 1.5rem .5rem;flex-shrink:0}
+    .note-title-input{width:100%;background:none;border:none;outline:none;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;color:var(--text);letter-spacing:-.01em;resize:none}
+    .note-title-input::placeholder{color:var(--text3)}
+    .note-meta-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:.5rem}
+    .note-meta-item{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+    .note-tag-selector{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
+    .tag-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:100px;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid;cursor:pointer;transition:all .18s}
+    .tag-badge .remove-tag{opacity:0;transition:opacity .15s;margin-left:2px;font-size:.6rem}
+    .tag-badge:hover .remove-tag{opacity:1}
+    .add-tag-btn{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:100px;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);border:1px dashed var(--border);cursor:pointer;transition:all .18s}
+    .add-tag-btn:hover{border-color:var(--border2);color:var(--gold)}
+
+    /* EDITOR CONTENT */
+    .editor-scroll{flex:1;overflow-y:auto;padding:0 1.5rem 3rem}
+    .editor-scroll::-webkit-scrollbar{width:3px}
+    .editor-scroll::-webkit-scrollbar-track{background:transparent}
+    .editor-scroll::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:99px}
+
+    .editor-body{min-height:300px;outline:none;font-size:.9rem;line-height:1.8;color:var(--text2);caret-color:var(--gold);padding-top:.5rem}
+    .editor-body:empty::before{content:attr(data-placeholder);color:var(--text3);pointer-events:none;font-style:italic}
+
+    /* Rich text styles */
+    .editor-body h1{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:700;color:var(--text);margin:1.2rem 0 .5rem;line-height:1.2}
+    .editor-body h2{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--text);margin:1rem 0 .4rem;line-height:1.3}
+    .editor-body h3{font-size:1rem;font-weight:600;color:var(--text);margin:.8rem 0 .35rem}
+    .editor-body strong{color:var(--text);font-weight:600}
+    .editor-body em{color:var(--text2);font-style:italic}
+    .editor-body u{text-decoration:underline;text-decoration-color:rgba(232,184,75,0.4)}
+    .editor-body s{text-decoration:line-through;color:var(--text3)}
+    .editor-body a{color:var(--gold);text-decoration:underline;text-decoration-color:rgba(232,184,75,0.3)}
+    .editor-body code{font-family:'DM Mono',monospace;font-size:.82rem;background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--gold)}
+    .editor-body pre{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;font-family:'DM Mono',monospace;font-size:.78rem;overflow-x:auto;margin:.75rem 0;color:var(--text2)}
+    .editor-body blockquote{border-left:2px solid var(--border2);padding-left:1rem;color:var(--text3);font-style:italic;margin:.75rem 0}
+    .editor-body ul,.editor-body ol{padding-left:1.4rem;margin:.5rem 0}
+    .editor-body li{margin:.25rem 0;line-height:1.7}
+    .editor-body hr{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+    .editor-body mark{background:rgba(232,184,75,0.18);color:var(--text);border-radius:3px;padding:1px 3px}
+
+    /* CHECKBOX ITEM */
+    .editor-body .cb-item{display:flex;align-items:flex-start;gap:.6rem;margin:.35rem 0;padding:.3rem .5rem;border-radius:8px;transition:background .15s;cursor:default}
+    .editor-body .cb-item:hover{background:var(--bg2)}
+    .editor-body .cb-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold);flex-shrink:0;margin-top:3px;cursor:pointer}
+    .editor-body .cb-item .cb-text{flex:1;min-width:0;outline:none;background:none;border:none;color:var(--text2);font-family:'Sora',sans-serif;font-size:.9rem;line-height:1.6;width:100%}
+    .editor-body .cb-item.done .cb-text{color:var(--text3);text-decoration:line-through}
+
+    /* COPY BLOCK */
+    .editor-body .copy-block{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 3.5rem 1rem 1rem;margin:.75rem 0;transition:border-color .2s}
+    .editor-body .copy-block:hover{border-color:var(--border2)}
+    .copy-block-btn{position:absolute;top:.6rem;right:.6rem;display:flex;align-items:center;gap:4px;padding:4px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .18s;user-select:none}
+    .copy-block-btn:hover{border-color:var(--border2);color:var(--gold)}
+    .copy-block-btn.copied{background:rgba(125,186,132,0.12);border-color:var(--green);color:var(--green)}
+    .copy-block-content{font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text2);white-space:pre-wrap;word-break:break-all;outline:none}
+
+    /* INLINE COPYABLE TEXT */
+    .copyable{border-bottom:1px dashed rgba(232,184,75,0.3);cursor:pointer;transition:all .18s;position:relative;padding:0 2px}
+    .copyable:hover{background:rgba(232,184,75,0.08);border-bottom-color:var(--gold);border-radius:3px}
+
+    /* SELECTION COPY POPUP */
+    #sel-copy-popup{position:fixed;display:none;z-index:1000;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:5px 6px;box-shadow:0 8px 32px rgba(0,0,0,.5);gap:4px}
+    #sel-copy-popup.show{display:flex}
+    .sel-copy-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;background:none;border:none;border-radius:7px;color:var(--text2);font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .16s;white-space:nowrap}
+    .sel-copy-btn:hover{background:var(--bg2);color:var(--gold)}
+    .sel-copy-btn.primary{color:var(--gold)}
+
+    /* EMPTY STATE */
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;color:var(--text3);padding:2rem}
+    .empty-icon{font-size:3rem;opacity:.3}
+    .empty-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--text3)}
+    .empty-sub{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;opacity:.6;text-align:center}
+    .empty-new{margin-top:.5rem;display:flex;align-items:center;gap:7px;padding:10px 18px;background:var(--gold-dim);border:1px solid var(--border2);border-radius:var(--radius);color:var(--gold);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .22s}
+    .empty-new:hover{background:rgba(232,184,75,0.16)}
+
+    /* NOTE ACTIONS */
+    .editor-footer{padding:.6rem 1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(9,8,10,0.3)}
+    .footer-actions{display:flex;gap:.5rem}
+    .footer-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .18s}
+    .footer-btn:hover{border-color:var(--border2);color:var(--text)}
+    .footer-btn.danger:hover{border-color:var(--red);color:var(--red)}
+    .footer-btn.pin-active{border-color:rgba(232,184,75,0.3);color:var(--gold)}
+    .footer-info{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);letter-spacing:.06em}
+
+    /* TOAST */
+    #toast-wrap{position:fixed;bottom:2rem;right:2rem;z-index:2000;display:flex;flex-direction:column;gap:.5rem;pointer-events:none}
+    .toast{display:flex;align-items:center;gap:.6rem;padding:.7rem 1.1rem;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateX(110%);opacity:0;transition:all .3s var(--spring);pointer-events:none}
+    .toast.show{transform:translateX(0);opacity:1}
+    .toast.success{border-color:rgba(125,186,132,.3);color:var(--green)}
+    .toast.error{border-color:rgba(217,83,74,.3);color:var(--red)}
+
+    /* TAG COLOR MAP */
+    .tag-red{color:#d9534a;border-color:rgba(217,83,74,0.3);background:rgba(217,83,74,0.08)}
+    .tag-green{color:#7dba84;border-color:rgba(125,186,132,0.3);background:rgba(125,186,132,0.08)}
+    .tag-blue{color:#6aa8d4;border-color:rgba(106,168,212,0.3);background:rgba(106,168,212,0.08)}
+    .tag-gold{color:#e8b84b;border-color:rgba(232,184,75,0.3);background:rgba(232,184,75,0.08)}
+    .tag-purple{color:#a884d4;border-color:rgba(168,132,212,0.3);background:rgba(168,132,212,0.08)}
+    .tag-orange{color:#d48a4a;border-color:rgba(212,138,74,0.3);background:rgba(212,138,74,0.08)}
+
+    .tag-dot-red{background:#d9534a}
+    .tag-dot-green{background:#7dba84}
+    .tag-dot-blue{background:#6aa8d4}
+    .tag-dot-gold{background:#e8b84b}
+    .tag-dot-purple{background:#a884d4}
+    .tag-dot-orange{background:#d48a4a}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{background:var(--bg1);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;min-width:320px;max-width:90vw;transform:scale(.94) translateY(12px);transition:transform .28s var(--spring);max-height:80vh;overflow-y:auto}
+    .modal-overlay.open .modal{transform:scale(1) translateY(0)}
+    .modal-title{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:1.2rem}
+    .modal-row{margin-bottom:1rem}
+    .modal-label{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem}
+    .modal-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem .9rem;color:var(--text);font-family:'Sora',sans-serif;font-size:.85rem;outline:none;transition:border-color .2s}
+    .modal-input:focus{border-color:var(--border2)}
+    .modal-actions{display:flex;gap:.6rem;margin-top:1.5rem;justify-content:flex-end}
+    .modal-btn{padding:8px 18px;border-radius:10px;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .modal-btn.secondary{background:none;border:1px solid var(--border);color:var(--text3)}
+    .modal-btn.secondary:hover{border-color:var(--border2);color:var(--text)}
+    .modal-btn.primary{background:var(--gold-dim);border:1px solid var(--border2);color:var(--gold)}
+    .modal-btn.primary:hover{background:rgba(232,184,75,.18)}
+    .color-picker{display:flex;gap:.5rem;flex-wrap:wrap}
+    .color-opt{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .18s}
+    .color-opt.selected{border-color:var(--text);transform:scale(1.2)}
+
+    /* MOBILE TOGGLE */
+    .sidebar-toggle{display:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text3);cursor:pointer;font-size:1rem;flex-shrink:0}
+    @media(max-width:768px){.sidebar-toggle{display:flex}}
+    .sidebar-overlay{display:none;position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.5)}
+    .sidebar-overlay.show{display:block}
+
+    /* CURSOR */
+    @media(min-width:769px){
+      *,*::before,*::after{cursor:none!important}
+      #c-dot{position:fixed;width:6px;height:6px;background:#e8b84b;border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .2s,height .2s;opacity:0}
+      #c-ring{position:fixed;width:36px;height:36px;border:1.5px solid rgba(232,184,75,.55);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width .25s,height .25s,border-color .25s;opacity:0}
+      #c-dot.hovering{width:10px;height:10px}
+      #c-ring.hovering{width:52px;height:52px;border-color:rgba(232,184,75,.85)}
+    }
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+    /* WORD COUNT BADGE */
+    .wc-badge{font-family:'DM Mono',monospace;font-size:.52rem;color:var(--text3);letter-spacing:.06em}
+
+    /* SECTION DIVIDER HELPER */
+    .insert-hint{color:var(--text3);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;padding:.3rem 0;display:block;opacity:0;transition:opacity .2s;text-align:center;cursor:default}
+    .editor-body:focus .insert-hint{opacity:.4}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+    <a href="index.html" class="topbar-back">← Home</a>
+    <span class="topbar-logo">Notes</span>
+  </div>
+  <div class="topbar-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Menghubungkan…</span>
+    </div>
+    <span class="topbar-time" id="topbar-time">—</span>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-new-btn">
+      <button class="new-btn" onclick="newNote()">＋ &nbsp;Catatan Baru</button>
+    </div>
+    <div class="sidebar-header">
+      <div class="sidebar-search">
+        <span class="s-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Cari catatan…" oninput="filterNotes()">
+      </div>
+    </div>
+    <div class="sidebar-tags" id="tag-filter-row"></div>
+    <div class="notes-list" id="notes-list"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main-panel">
+    <!-- EDITOR TOOLBAR -->
+    <div class="editor-toolbar" id="editor-toolbar" style="display:none">
+      <div class="tb-group">
+        <button class="tb-btn" title="Bold" onclick="fmt('bold')"><b>B</b></button>
+        <button class="tb-btn" title="Italic" onclick="fmt('italic')"><i>I</i></button>
+        <button class="tb-btn" title="Underline" onclick="fmt('underline')"><u>U</u></button>
+        <button class="tb-btn" title="Strikethrough" onclick="fmt('strikeThrough')"><s>S</s></button>
+        <button class="tb-btn" title="Highlight" onclick="fmt('hiliteColor','rgba(232,184,75,0.18)')">◑</button>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-group">
+        <button class="tb-btn" title="Heading 1" onclick="fmt('formatBlock','h1')">H1</button>
+        <button class="tb-btn" title="Heading 2" onclick="fmt('formatBlock','h2')">H2</button>
+        <button class="tb-btn" title="Heading 3" onclick="fmt('formatBlock','h3')">H3</button>
+        <button class="tb-btn" title="Paragraph" onclick="fmt('formatBlock','p')">¶</button>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-group">
+        <button class="tb-btn" title="Daftar Bullet" onclick="fmt('insertUnorderedList')">≡</button>
+        <button class="tb-btn" title="Daftar Angka" onclick="fmt('insertOrderedList')">①</button>
+        <button class="tb-btn" title="Checkbox" onclick="insertCheckbox()">☑</button>
+        <button class="tb-btn" title="Kutipan" onclick="fmt('formatBlock','blockquote')">"</button>
+        <button class="tb-btn" title="Kode" onclick="insertCode()">‹/›</button>
+        <button class="tb-btn" title="Garis Pemisah" onclick="fmt('insertHorizontalRule')">—</button>
+      </div>
+      <div class="tb-sep"></div>
+      <div class="tb-group">
+        <button class="tb-btn" title="Blok Copy (teks yang bisa di-copy satu klik)" onclick="insertCopyBlock()">📋</button>
+        <button class="tb-btn" title="Link" onclick="insertLink()">🔗</button>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">📝</div>
+      <div class="empty-title">Belum ada catatan</div>
+      <div class="empty-sub">Pilih catatan atau buat yang baru</div>
+      <button class="empty-new" onclick="newNote()">＋ &nbsp;Buat Catatan Pertama</button>
+    </div>
+
+    <!-- EDITOR AREA -->
+    <div id="editor-area" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div class="editor-note-meta">
+        <textarea class="note-title-input" id="note-title" rows="1" placeholder="Judul catatan…" oninput="autoResize(this);debounceSave()" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('editor-body').focus()}"></textarea>
+        <div class="note-meta-row">
+          <div class="note-meta-item">🕐 <span id="meta-date">—</span></div>
+          <div class="note-meta-item">📝 <span class="wc-badge" id="wc-badge">0 kata</span></div>
+          <div class="note-tag-selector" id="note-tag-selector"></div>
+          <button class="add-tag-btn" onclick="openTagModal()">＋ Tag</button>
+        </div>
+      </div>
+      <div class="editor-scroll">
+        <div class="editor-body" id="editor-body" contenteditable="true" data-placeholder="Mulai menulis… Ketik / untuk perintah cepat, atau sorot teks untuk opsi copy." oninput="onEditorInput()" onkeydown="handleEditorKey(event)" onmouseup="handleSelectionCopy()" onkeyup="handleSelectionCopy()"></div>
+      </div>
+      <div class="editor-footer">
+        <div class="footer-actions">
+          <button class="footer-btn" id="pin-btn" onclick="togglePin()">📌 Pin</button>
+          <button class="footer-btn" onclick="copyNoteText()">📋 Copy Semua</button>
+          <button class="footer-btn" onclick="exportNote()">⬇ Export</button>
+          <button class="footer-btn danger" onclick="deleteNote()">🗑 Hapus</button>
+        </div>
+        <div class="footer-info" id="footer-info">—</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- SELECTION COPY POPUP -->
+<div id="sel-copy-popup">
+  <button class="sel-copy-btn primary" onclick="copySelection()">📋 Copy Teks Ini</button>
+  <button class="sel-copy-btn" onclick="wrapSelectionAsCopyBlock()">⬜ Jadikan Copy Block</button>
+  <button class="sel-copy-btn" onclick="makeSelectionCopyable()">✦ Inline Copyable</button>
+</div>
+
+<!-- TOAST -->
+<div id="toast-wrap"></div>
+
+<!-- TAG MODAL -->
+<div class="modal-overlay" id="tag-modal">
+  <div class="modal">
+    <div class="modal-title">Kelola Tag</div>
+    <div class="modal-row">
+      <div class="modal-label">Pilih tag yang ada</div>
+      <div id="all-tags-list" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.8rem"></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Buat tag baru</div>
+      <input type="text" class="modal-input" id="new-tag-name" placeholder="Nama tag…">
+    </div>
+    <div class="modal-row">
+      <div class="modal-label">Warna</div>
+      <div class="color-picker">
+        <div class="color-opt selected" style="background:#e8b84b" data-color="gold" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#7dba84" data-color="green" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#6aa8d4" data-color="blue" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#d9534a" data-color="red" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#a884d4" data-color="purple" onclick="selectColor(this)"></div>
+        <div class="color-opt" style="background:#d48a4a" data-color="orange" onclick="selectColor(this)"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeTagModal()">Batal</button>
+      <button class="modal-btn primary" onclick="addTag()">Simpan Tag</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM CURSOR -->
+<div id="c-dot"></div>
+<div id="c-ring"></div>
+
+<script type="module">
+// ── FIREBASE ──────────────────────────────────────────────────
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, collection, doc, setDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp, Timestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB_CFG = {
+  apiKey:"AIzaSyCJlPlTfMXYwPuykQhsx-duxM_LfTU68gA",
+  authDomain:"abagja-orbit.firebaseapp.com",
+  projectId:"abagja-orbit",
+  storageBucket:"abagja-orbit.firebasestorage.app",
+  messagingSenderId:"554354531256",
+  appId:"1:554354531256:web:19d90218bd6dbcb9ed8d4d"
+};
+const app = initializeApp(FB_CFG, 'notes-app');
+const db  = getFirestore(app);
+const COLL = 'orbit-notes';
+
+// ── STATE ─────────────────────────────────────────────────────
+let notes = {};          // { id: noteObj }
+let activeId = null;
+let allTags = {};        // { tagName: color }
+let filterTag = null;
+let saveTimer = null;
+let newTagColor = 'gold';
+
+// ── HELPERS ───────────────────────────────────────────────────
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function fmtDate(ts){
+  if(!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(d);
+}
+function wordCount(text){ return text.trim().split(/\s+/).filter(Boolean).length; }
+function stripHtml(html){ const d=document.createElement('div');d.innerHTML=html;return d.textContent||''; }
+function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// ── SYNC STATUS ───────────────────────────────────────────────
+function setSyncStatus(state, label){
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot '+state;
+  lbl.textContent = label;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+window.toast = function(msg, type=''){
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast '+(type||'');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),400); },2500);
+};
+
+// ── FIRESTORE SYNC ────────────────────────────────────────────
+setSyncStatus('syncing','Menyinkron…');
+const q = query(collection(db, COLL), orderBy('updatedAt','desc'));
+onSnapshot(q, snap => {
+  snap.docChanges().forEach(change => {
+    if(change.type === 'removed'){
+      delete notes[change.doc.id];
+    } else {
+      notes[change.doc.id] = { id: change.doc.id, ...change.doc.data() };
+      // Kumpulkan semua tag
+      const n = notes[change.doc.id];
+      if(n.tags) n.tags.forEach(t=>{ if(!allTags[t.name]) allTags[t.name]=t.color; });
+    }
+  });
+  setSyncStatus('synced','Tersinkron');
+  renderNotesList();
+  renderTagFilter();
+  if(activeId && notes[activeId]) renderEditorMeta();
+}, err => {
+  setSyncStatus('error','Error Sync');
+  console.error(err);
+});
+
+async function saveNote(id){
+  const n = notes[id];
+  if(!n) return;
+  setSyncStatus('syncing','Menyimpan…');
+  try {
+    await setDoc(doc(db, COLL, id), {
+      title: n.title||'',
+      body: n.body||'',
+      tags: n.tags||[],
+      pinned: n.pinned||false,
+      updatedAt: serverTimestamp(),
+      createdAt: n.createdAt || serverTimestamp()
+    }, { merge: true });
+    setSyncStatus('synced','Tersinkron');
+  } catch(e){
+    setSyncStatus('error','Gagal Simpan');
+    toast('Gagal menyimpan catatan','error');
+  }
+}
+
+// ── RENDER NOTES LIST ─────────────────────────────────────────
+function renderNotesList(){
+  const list = document.getElementById('notes-list');
+  const search = document.getElementById('search-input').value.toLowerCase();
+  let sorted = Object.values(notes).sort((a,b)=>{
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    const ta = a.updatedAt?.toDate?.()?.getTime()||0;
+    const tb = b.updatedAt?.toDate?.()?.getTime()||0;
+    return tb-ta;
+  });
+  if(search) sorted = sorted.filter(n=>(n.title||'').toLowerCase().includes(search)||(stripHtml(n.body||'')).toLowerCase().includes(search));
+  if(filterTag) sorted = sorted.filter(n=>n.tags&&n.tags.some(t=>t.name===filterTag));
+
+  if(sorted.length===0){
+    list.innerHTML='<div style="padding:1.5rem 1rem;color:var(--text3);font-family:DM Mono,monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;text-align:center">'+(Object.keys(notes).length===0?'Belum ada catatan':'Tidak ada hasil')+'</div>';
+    return;
+  }
+  list.innerHTML = sorted.map(n=>{
+    const preview = stripHtml(n.body||'').slice(0,80).trim();
+    const tagsHtml = (n.tags||[]).map(t=>`<div class="note-tag-mini tag-dot-${t.color||'gold'}"></div>`).join('');
+    return `<div class="note-item${n.id===activeId?' active':''}${n.pinned?' pinned':''}" onclick="selectNote('${n.id}')">
+      <div class="note-item-title">${n.pinned?'<span class="note-pinned-icon">📌</span>':''}${escHtml(n.title||'Tanpa Judul')}</div>
+      <div class="note-item-preview">${escHtml(preview)||'<em>Kosong…</em>'}</div>
+      <div class="note-item-meta">
+        <span class="note-item-date">${fmtDate(n.updatedAt)}</span>
+        <div class="note-item-tags">${tagsHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTagFilter(){
+  const row = document.getElementById('tag-filter-row');
+  const tags = Object.entries(allTags);
+  if(tags.length===0){row.innerHTML='';return;}
+  row.innerHTML = `<div class="tag-chip${!filterTag?' active':''}" onclick="setFilterTag(null)">Semua</div>`
+    + tags.map(([name,color])=>`<div class="tag-chip${filterTag===name?' active':''}" onclick="setFilterTag('${escHtml(name)}')">`+
+    `<div class="tag-dot tag-dot-${color||'gold'}"></div>${escHtml(name)}</div>`).join('');
+}
+
+window.setFilterTag = function(tag){
+  filterTag = tag;
+  renderNotesList();
+  renderTagFilter();
+};
+
+window.filterNotes = renderNotesList;
+
+// ── SELECT / OPEN NOTE ────────────────────────────────────────
+window.selectNote = function(id){
+  activeId = id;
+  const n = notes[id];
+  if(!n) return;
+  document.getElementById('empty-state').style.display='none';
+  const ea = document.getElementById('editor-area');
+  ea.style.display='flex';
+  document.getElementById('editor-toolbar').style.display='flex';
+  document.getElementById('note-title').value = n.title||'';
+  document.getElementById('editor-body').innerHTML = n.body||'';
+  autoResize(document.getElementById('note-title'));
+  renderEditorMeta();
+  updateWordCount();
+  renderNotesList();
+  // Mobile: close sidebar
+  if(window.innerWidth<=768) closeSidebar();
+};
+
+function renderEditorMeta(){
+  const n = notes[activeId];
+  if(!n) return;
+  document.getElementById('meta-date').textContent = fmtDate(n.updatedAt);
+  // Tags
+  const sel = document.getElementById('note-tag-selector');
+  sel.innerHTML = (n.tags||[]).map(t=>`<span class="tag-badge tag-${t.color||'gold'}" onclick="removeTagFromNote('${escHtml(t.name)}')">
+    <span class="tag-dot tag-dot-${t.color||'gold'}" style="width:5px;height:5px;border-radius:50%;flex-shrink:0"></span>
+    ${escHtml(t.name)}<span class="remove-tag">✕</span>
+  </span>`).join('');
+  // Pin button
+  const pinBtn = document.getElementById('pin-btn');
+  pinBtn.className = 'footer-btn'+(n.pinned?' pin-active':'');
+  pinBtn.textContent = n.pinned?'📌 Di-pin':'📌 Pin';
+  // Footer info
+  document.getElementById('footer-info').textContent = `ID: ${activeId.slice(0,8)}…`;
+}
+
+// ── NEW NOTE ──────────────────────────────────────────────────
+window.newNote = function(){
+  const id = uid();
+  notes[id] = { id, title:'', body:'', tags:[], pinned:false, createdAt:Timestamp.now(), updatedAt:Timestamp.now() };
+  saveNote(id);
+  selectNote(id);
+  setTimeout(()=>document.getElementById('note-title').focus(),50);
+};
+
+// ── SAVE (DEBOUNCED) ──────────────────────────────────────────
+window.debounceSave = function(){
+  if(!activeId) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    notes[activeId].title = document.getElementById('note-title').value;
+    notes[activeId].body  = document.getElementById('editor-body').innerHTML;
+    saveNote(activeId);
+    renderNotesList();
+  },800);
+};
+
+window.onEditorInput = function(){
+  updateWordCount();
+  debounceSave();
+};
+
+function updateWordCount(){
+  const body = document.getElementById('editor-body');
+  const wc = wordCount(stripHtml(body.innerHTML));
+  document.getElementById('wc-badge').textContent = wc+' kata';
+}
+
+// ── FORMATTING ────────────────────────────────────────────────
+window.fmt = function(cmd, val){
+  document.getElementById('editor-body').focus();
+  document.execCommand(cmd, false, val||null);
+  debounceSave();
+};
+
+window.insertCheckbox = function(){
+  const id = 'cb-'+uid();
+  const html = `<div class="cb-item" id="${id}" contenteditable="false">
+    <input type="checkbox" onchange="toggleCb('${id}',this.checked)">
+    <span class="cb-text" contenteditable="true" oninput="debounceSave()">Tugas baru</span>
+  </div><br>`;
+  document.execCommand('insertHTML',false,html);
+  debounceSave();
+};
+
+window.toggleCb = function(id, checked){
+  const el = document.getElementById(id);
+  if(el) el.classList.toggle('done',checked);
+  debounceSave();
+};
+
+window.insertCode = function(){
+  document.execCommand('insertHTML',false,'<code>kode di sini</code>');
+  debounceSave();
+};
+
+window.insertLink = function(){
+  const url = prompt('Masukkan URL:');
+  if(url) document.execCommand('createLink',false,url);
+  debounceSave();
+};
+
+// ── COPY BLOCK ────────────────────────────────────────────────
+window.insertCopyBlock = function(){
+  const id='cpb-'+uid();
+  const html=`<div class="copy-block" id="${id}">
+    <button class="copy-block-btn" onclick="copyCopyBlock('${id}')">📋 Copy</button>
+    <div class="copy-block-content" contenteditable="true" oninput="debounceSave()">Teks yang bisa di-copy di sini…</div>
+  </div><br>`;
+  document.execCommand('insertHTML',false,html);
+  debounceSave();
+};
+
+window.copyCopyBlock = function(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const content = el.querySelector('.copy-block-content');
+  const text = content ? content.textContent : '';
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = el.querySelector('.copy-block-btn');
+    if(btn){ btn.classList.add('copied'); btn.textContent='✓ Disalin!'; setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML='📋 Copy'; },2000); }
+    toast('Teks disalin!','success');
+  }).catch(()=>toast('Gagal copy','error'));
+};
+
+// ── SELECTION COPY POPUP ──────────────────────────────────────
+let savedRange = null;
+window.handleSelectionCopy = function(){
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed || sel.toString().trim()===''){
+    document.getElementById('sel-copy-popup').classList.remove('show');
+    return;
+  }
+  const body = document.getElementById('editor-body');
+  if(!body.contains(sel.anchorNode)) return;
+  savedRange = sel.getRangeAt(0).cloneRange();
+  const rect = sel.getRangeAt(0).getBoundingClientRect();
+  const popup = document.getElementById('sel-copy-popup');
+  popup.style.top = (rect.top + window.scrollY - popup.offsetHeight - 10)+'px';
+  popup.style.left = Math.max(8, rect.left + rect.width/2 - 100)+'px';
+  popup.classList.add('show');
+};
+
+document.addEventListener('mousedown', e=>{
+  const popup = document.getElementById('sel-copy-popup');
+  if(!popup.contains(e.target)) popup.classList.remove('show');
+});
+
+window.copySelection = function(){
+  const sel = window.getSelection();
+  if(!sel||sel.isCollapsed) return;
+  navigator.clipboard.writeText(sel.toString()).then(()=>toast('Teks dipilih disalin!','success')).catch(()=>toast('Gagal copy','error'));
+  document.getElementById('sel-copy-popup').classList.remove('show');
+};
+
+window.wrapSelectionAsCopyBlock = function(){
+  if(!savedRange) return;
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+  const text = sel.toString();
+  const id = 'cpb-'+uid();
+  const html=`<div class="copy-block" id="${id}">
+    <button class="copy-block-btn" onclick="copyCopyBlock('${id}')">📋 Copy</button>
+    <div class="copy-block-content" contenteditable="true" oninput="debounceSave()">${escHtml(text)}</div>
+  </div>`;
+  document.execCommand('insertHTML',false,html);
+  document.getElementById('sel-copy-popup').classList.remove('show');
+  debounceSave();
+  toast('Dijadikan Copy Block!','success');
+};
+
+window.makeSelectionCopyable = function(){
+  if(!savedRange) return;
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+  const text = sel.toString();
+  const html = `<span class="copyable" title="Klik untuk copy" onclick="copyCopyable(this)">${escHtml(text)}</span>`;
+  document.execCommand('insertHTML',false,html);
+  document.getElementById('sel-copy-popup').classList.remove('show');
+  debounceSave();
+  toast('Teks bisa di-klik untuk copy!','success');
+};
+
+window.copyCopyable = function(el){
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    const orig = el.textContent;
+    el.textContent='✓';
+    setTimeout(()=>el.textContent=orig,1200);
+    toast('Disalin!','success');
+  });
+};
+
+// ── EDITOR KEY COMMANDS ───────────────────────────────────────
+window.handleEditorKey = function(e){
+  // / command hint (simple)
+  if(e.key==='Tab'){e.preventDefault();document.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;');}
+};
+
+// ── TAGS ──────────────────────────────────────────────────────
+window.openTagModal = function(){
+  if(!activeId) return;
+  const modal = document.getElementById('tag-modal');
+  modal.classList.add('open');
+  renderAllTagsList();
+};
+window.closeTagModal = function(){
+  document.getElementById('tag-modal').classList.remove('open');
+};
+document.getElementById('tag-modal').addEventListener('click', e=>{ if(e.target===document.getElementById('tag-modal')) closeTagModal(); });
+
+function renderAllTagsList(){
+  const el = document.getElementById('all-tags-list');
+  const n = notes[activeId];
+  const noteTags = (n&&n.tags)||[];
+  el.innerHTML = Object.entries(allTags).map(([name,color])=>{
+    const active = noteTags.some(t=>t.name===name);
+    return `<span class="tag-badge tag-${color}${active?' active':''}" style="${active?'outline:1px solid var(--border2)':''}" onclick="toggleTagOnNote('${escHtml(name)}','${color}',this)">
+      ${escHtml(name)}${active?' ✓':''}
+    </span>`;
+  }).join('')||'<span style="color:var(--text3);font-size:.7rem">Belum ada tag</span>';
+}
+
+window.toggleTagOnNote = function(name, color, el){
+  const n = notes[activeId];
+  if(!n) return;
+  n.tags = n.tags||[];
+  const idx = n.tags.findIndex(t=>t.name===name);
+  if(idx>=0) n.tags.splice(idx,1);
+  else n.tags.push({name,color});
+  saveNote(activeId);
+  renderEditorMeta();
+  renderAllTagsList();
+};
+
+window.removeTagFromNote = function(name){
+  const n = notes[activeId];
+  if(!n) return;
+  n.tags = (n.tags||[]).filter(t=>t.name!==name);
+  saveNote(activeId);
+  renderEditorMeta();
+};
+
+window.selectColor = function(el){
+  document.querySelectorAll('.color-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  newTagColor = el.dataset.color;
+};
+
+window.addTag = function(){
+  const name = document.getElementById('new-tag-name').value.trim();
+  if(!name){toast('Nama tag tidak boleh kosong','error');return;}
+  allTags[name] = newTagColor;
+  // Langsung tambahkan ke note aktif
+  const n = notes[activeId];
+  if(n){
+    n.tags = n.tags||[];
+    if(!n.tags.some(t=>t.name===name)) n.tags.push({name,color:newTagColor});
+    saveNote(activeId);
+    renderEditorMeta();
+  }
+  renderTagFilter();
+  document.getElementById('new-tag-name').value='';
+  closeTagModal();
+  toast('Tag "'+name+'" ditambahkan','success');
+};
+
+// ── NOTE ACTIONS ──────────────────────────────────────────────
+window.togglePin = function(){
+  if(!activeId) return;
+  const n = notes[activeId];
+  n.pinned = !n.pinned;
+  saveNote(activeId);
+  renderEditorMeta();
+  renderNotesList();
+  toast(n.pinned?'Catatan di-pin 📌':'Pin dilepas','success');
+};
+
+window.copyNoteText = function(){
+  const title = document.getElementById('note-title').value;
+  const body = stripHtml(document.getElementById('editor-body').innerHTML);
+  navigator.clipboard.writeText((title?title+'\n\n':'')+body).then(()=>toast('Seluruh catatan disalin!','success')).catch(()=>toast('Gagal copy','error'));
+};
+
+window.exportNote = function(){
+  if(!activeId) return;
+  const n = notes[activeId];
+  const text = (n.title?n.title+'\n\n':'')+stripHtml(n.body||'');
+  const blob = new Blob([text],{type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (n.title||'catatan').replace(/[^a-z0-9]/gi,'_')+'.txt';
+  a.click();
+  toast('Catatan diekspor','success');
+};
+
+window.deleteNote = function(){
+  if(!activeId) return;
+  if(!confirm('Hapus catatan ini? Tidak bisa dibatalkan.')) return;
+  const id = activeId;
+  deleteDoc(doc(db, COLL, id)).then(()=>{
+    delete notes[id];
+    activeId=null;
+    document.getElementById('editor-area').style.display='none';
+    document.getElementById('editor-toolbar').style.display='none';
+    document.getElementById('empty-state').style.display='flex';
+    renderNotesList();
+    toast('Catatan dihapus','success');
+  }).catch(()=>toast('Gagal menghapus','error'));
+};
+
+// ── MISC HELPERS ──────────────────────────────────────────────
+window.autoResize = function(el){
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
+};
+
+// Topbar clock
+function tick(){ document.getElementById('topbar-time').textContent=new Intl.DateTimeFormat('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' WIB'; }
+tick(); setInterval(tick,1000);
+
+// Sidebar mobile
+window.closeSidebar = function(){
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+};
+document.getElementById('sidebar-toggle').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+});
+document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
+
+// Custom cursor
+(function(){
+  const dot=document.getElementById('c-dot'),ring=document.getElementById('c-ring');
+  let mx=-999,my=-999,rx=-999,ry=-999,raf=null;
+  function lerp(a,b,t){return a+(b-a)*t}
+  function loop(){rx=lerp(rx,mx,.12);ry=lerp(ry,my,.12);ring.style.left=rx+'px';ring.style.top=ry+'px';raf=requestAnimationFrame(loop);}
+  document.addEventListener('mousemove',e=>{
+    if(window.matchMedia('(max-width:768px)').matches)return;
+    mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';dot.style.opacity='1';ring.style.opacity='1';
+    if(!raf)loop();
+  });
+  document.addEventListener('mouseleave',()=>{dot.style.opacity='0';ring.style.opacity='0';});
+  document.addEventListener('mouseover',e=>{
+    const t=e.target.closest('a,button,.btn,.note-item,.tb-btn,.footer-btn,.new-btn,.tag-chip,.copyable');
+    dot.classList.toggle('hovering',!!t);ring.classList.toggle('hovering',!!t);
+  });
+})();
+</script>
+</body>
+</html>

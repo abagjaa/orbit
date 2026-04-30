@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABAGJA ORBIT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg0:#0a0908;--bg1:#13110f;--bg2:#1c1814;--bg3:#252018;
+      --border:rgba(232,184,75,0.12);--border2:rgba(232,184,75,0.26);
+      --gold:#e8b84b;--gold2:#c4873a;--gold-dim:rgba(232,184,75,0.10);
+      --text:#f0ead8;--text2:#a8997a;--text3:#6a5e48;
+      --red:#d9534a;--green:#7dba84;
+      --radius:14px;--radius-lg:22px;
+      --ease:cubic-bezier(0.4,0,0.2,1);--spring:cubic-bezier(0.34,1.56,0.64,1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{font-family:'Sora',sans-serif;background:var(--bg0);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    body::before{content:'';position:fixed;inset:0;opacity:.03;pointer-events:none;z-index:9999;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+    /* TOPBAR */
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:52px;background:rgba(9,8,10,0.6);backdrop-filter:blur(24px);border-bottom:1px solid rgba(232,184,75,0.06)}
+    .topbar-logo{font-family:'Cormorant Garamond',serif;font-size:.9rem;font-weight:600;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;opacity:.55}
+    .topbar-time{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.07em}
+
+    /* HERO */
+    .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;padding:52px 2.5rem 0}
+    @media(max-width:480px){.hero{padding:52px 1.2rem 0}}
+    .hero-glow{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(232,184,75,0.065) 0%,transparent 68%);pointer-events:none}
+
+    /* BIG BRAND */
+    .brand-wrap{position:relative;z-index:2;margin-bottom:2.5rem;line-height:1}
+    .brand-abagja{
+      display:block;
+      font-family:'Cormorant Garamond',serif;
+      font-size:clamp(2.2rem,8vw,8rem);
+      font-weight:300;
+      color:rgba(240,234,216,0.55);
+      letter-spacing:.3em;
+      text-transform:uppercase;
+      line-height:1;
+    }
+    .brand-orbit{
+      display:block;
+      font-family:'Cormorant Garamond',serif;
+      font-size:clamp(5rem,18vw,18rem);
+      font-weight:700;
+      color:var(--gold);
+      letter-spacing:-.02em;
+      text-transform:uppercase;
+      line-height:.85;
+      margin-left:-.05em;
+    }
+    .brand-sub{
+      font-family:'DM Mono',monospace;
+      font-size:.65rem;
+      color:var(--text3);
+      letter-spacing:.28em;
+      text-transform:uppercase;
+      margin-top:.9rem;
+      display:block;
+    }
+
+    /* GREETING */
+    .greeting-row{display:flex;align-items:center;gap:10px;margin-bottom:2rem;position:relative;z-index:2}
+    .gdot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0;animation:gdot 2.4s ease infinite}
+    @keyframes gdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.6)}}
+    #salam{font-size:.9rem;color:var(--text2);font-weight:400}
+
+    /* TIME STRIP */
+    .time-strip{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:1.2rem;position:relative;z-index:2}
+    @media(max-width:480px){.time-strip{gap:.5rem}.tp{padding:7px 12px}}
+    .tp{display:flex;align-items:center;gap:9px;background:rgba(17,16,25,0.75);border:1px solid var(--border);border-radius:100px;padding:8px 16px;backdrop-filter:blur(12px);transition:all .24s var(--ease)}
+    .tp:hover{border-color:var(--border2);transform:translateY(-2px)}
+    .tp-loc{font-family:'DM Mono',monospace;font-size:.53rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
+    .tp-t{font-family:'DM Mono',monospace;font-size:.88rem;color:var(--gold);font-weight:500}
+
+    /* QUICK NAV */
+    .quick-nav{display:flex;gap:1rem;margin-bottom:1.8rem;position:relative;z-index:2}
+    @media(max-width:480px){.quick-nav{gap:.75rem}}
+    .qn-btn{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;cursor:pointer}
+    .qn-circle{width:52px;height:52px;border-radius:50%;background:rgba(17,16,25,0.75);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.35rem;transition:all .28s var(--ease);backdrop-filter:blur(12px)}
+    .qn-btn:hover .qn-circle{border-color:var(--border2);background:rgba(232,184,75,0.08);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .qn-label{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);white-space:nowrap}
+
+    /* SCROLL CUE */
+    .scroll-cue{position:absolute;bottom:2.2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;animation:floatY 2.5s ease infinite;z-index:2;cursor:pointer;text-decoration:none;background:none;border:none}
+    .scroll-cue:hover{color:var(--gold)}
+    @keyframes floatY{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-7px)}}
+
+    /* CONTENT */
+    .content{max-width:1120px;margin:0 auto;padding:5rem 2.5rem 6rem}
+
+    .sec-label{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.26em;text-transform:uppercase;color:var(--text3);margin-bottom:1rem;display:flex;align-items:center;gap:10px}
+    .sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+    /* IDR RATES */
+    .rates-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-bottom:4.5rem}
+    @media(max-width:680px){.rates-grid{grid-template-columns:1fr 1fr}}
+    .rcard{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius);padding:1.15rem 1.25rem;transition:all .22s var(--ease)}
+    .rcard:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+    .rcard-pair{font-family:'DM Mono',monospace;font-size:.54rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+    .rcard-val{font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;color:var(--text)}
+    .rcard-sub{font-size:.64rem;color:var(--text3);margin-top:3px}
+    .rcard-live{font-size:.58rem;color:var(--green);margin-top:5px;display:flex;align-items:center;gap:5px}
+    .rcard-live::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:livep 2s ease infinite}
+    @keyframes livep{0%,100%{opacity:1}50%{opacity:.25}}
+
+    /* MENU */
+    .menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+    @media(max-width:750px){.menu-grid{grid-template-columns:1fr}}
+    .mcard{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.2rem;text-decoration:none;display:block;position:relative;overflow:hidden;transition:all .32s var(--ease)}
+    .mcard::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 10% 10%,var(--cg,rgba(232,184,75,.06)) 0%,transparent 60%);opacity:0;transition:opacity .3s}
+    .mcard:hover::before{opacity:1}
+    .mcard:hover{transform:translateY(-5px);border-color:var(--border2);box-shadow:0 20px 56px rgba(0,0,0,.55)}
+    .mcard-icon{font-size:2rem;margin-bottom:1.2rem;display:block}
+    .mcard-title{font-size:1.2rem;font-weight:600;color:var(--text);margin-bottom:7px;letter-spacing:-.01em}
+    .mcard-desc{font-size:.78rem;color:var(--text3);font-weight:300;line-height:1.6}
+    .mcard-arrow{position:absolute;bottom:1.75rem;right:1.75rem;font-size:1.1rem;color:var(--text3);transition:all .28s var(--spring)}
+    .mcard:hover .mcard-arrow{color:var(--gold);transform:translate(4px,-4px)}
+    .mcard-bg{position:absolute;bottom:-14px;right:-8px;font-size:6rem;opacity:.03;pointer-events:none}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    .au{animation:fadeUp .48s var(--ease) both}
+    .d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg0)}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:99px}
+  
+    /* ─── CUSTOM CURSOR (desktop only) ─────────────── */
+    @media (min-width: 769px) {
+      *, *::before, *::after { cursor: none !important; }
+      #c-dot {
+        position: fixed;
+        width: 6px; height: 6px;
+        background: #e8b84b;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 99999;
+        transform: translate(-50%, -50%);
+        transition: width 0.2s, height 0.2s;
+        opacity: 0;
+      }
+      #c-ring {
+        position: fixed;
+        width: 36px; height: 36px;
+        border: 1.5px solid rgba(232,184,75,0.55);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 99998;
+        transform: translate(-50%, -50%);
+        transition: width 0.25s, height 0.25s, border-color 0.25s;
+        opacity: 0;
+      }
+      #c-dot.hovering { width: 10px; height: 10px; }
+      #c-ring.hovering { width: 52px; height: 52px; border-color: rgba(232,184,75,0.85); }
+    }
+    /* ── FLOATING CALC BUTTON ── */
+    .calc-fab{
+      position:fixed;bottom:2rem;right:2rem;z-index:500;
+      display:flex;align-items:center;gap:9px;
+      padding:10px 18px 10px 14px;
+      background:rgba(19,17,15,0.88);
+      border:1px solid var(--border2);
+      border-radius:100px;
+      backdrop-filter:blur(20px);
+      cursor:pointer;
+      font-family:'DM Mono',monospace;font-size:.6rem;
+      letter-spacing:.14em;text-transform:uppercase;
+      color:var(--gold);
+      transition:all .25s var(--ease);
+      box-shadow:0 8px 32px rgba(0,0,0,.45);
+    }
+    .calc-fab:hover{
+      background:rgba(232,184,75,.12);
+      border-color:var(--gold);
+      box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 20px rgba(232,184,75,.15);
+      transform:translateY(-2px);
+    }
+    .calc-fab.active{
+      background:rgba(232,184,75,.18);
+      border-color:var(--gold);
+    }
+    .calc-fab.not-supported{opacity:.35;cursor:not-allowed;}
+    .calc-fab-dot{
+      width:7px;height:7px;border-radius:50%;
+      background:var(--gold);flex-shrink:0;
+      box-shadow:0 0 8px rgba(232,184,75,.6);
+      animation:gdot 2.4s ease infinite;
+    }
+    .calc-fab.active .calc-fab-dot{
+      background:var(--green);
+      box-shadow:0 0 8px rgba(125,186,132,.6);
+    }
+    @media(max-width:768px){
+      .calc-fab{display:none;}
+    }
+
+    /* ─── RIPPLE TAP (mobile only) ──────────────────── */
+    @media (max-width: 768px) {
+      .ripple-tap {
+        position: fixed;
+        border-radius: 50%;
+        border: 1.5px solid rgba(232,184,75,0.7);
+        pointer-events: none;
+        z-index: 99999;
+        width: 0; height: 0;
+        transform: translate(-50%, -50%);
+        animation: ripple-out 0.7s ease-out forwards;
+      }
+      @keyframes ripple-out {
+        0%   { width: 0; height: 0; opacity: 0.9; }
+        100% { width: 80px; height: 80px; opacity: 0; }
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">Abagja Orbit</span>
+  <span class="topbar-time" id="topbar-time">—</span>
+</div>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+
+  <div class="brand-wrap au">
+    <span class="brand-abagja">Abagja</span>
+    <span class="brand-orbit">Orbit</span>
+    <span class="brand-sub">Dashboard Pribadi · Real-time</span>
+  </div>
+
+  <div class="greeting-row au d1">
+    <span class="gdot"></span>
+    <span id="salam">—</span>
+  </div>
+
+  <div class="time-strip au d2">
+    <div class="tp"><span>🇮🇩</span><div><div class="tp-loc">Bandung</div><div class="tp-t" id="s-id">—</div></div></div>
+    <div class="tp"><span>🇮🇪</span><div><div class="tp-loc">Ireland</div><div class="tp-t" id="s-ie">—</div></div></div>
+    <div class="tp"><span>🇺🇸</span><div><div class="tp-loc">New York</div><div class="tp-t" id="s-ny">—</div></div></div>
+    <div class="tp"><span>🇨🇭</span><div><div class="tp-loc">Zürich</div><div class="tp-t" id="s-ch">—</div></div></div>
+  </div>
+
+  <div class="quick-nav au d3">
+    <a href="clock.html" class="qn-btn">
+      <div class="qn-circle">🕐</div>
+      <span class="qn-label">Waktu</span>
+    </a>
+    <a href="currency.html" class="qn-btn">
+      <div class="qn-circle">💱</div>
+      <span class="qn-label">Kurs</span>
+    </a>
+    <a href="calculator.html" class="qn-btn">
+      <div class="qn-circle">🧮</div>
+      <span class="qn-label">Kalkulator</span>
+    </a>
+    <a href="notes.html" class="qn-btn">
+      <div class="qn-circle">📝</div>
+      <span class="qn-label">Notes</span>
+    </a>
+  </div>
+
+  <button class="scroll-cue" onclick="document.querySelector('.content').scrollIntoView({behavior:'smooth'})">
+    <span>scroll</span>
+    <svg width="14" height="18" viewBox="0 0 14 18" fill="none"><path d="M7 1v16M1 11l6 6 6-6" stroke="#e8b84b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".4"/></svg>
+  </button>
+</section>
+
+<div class="content">
+
+  <div class="au"><div class="sec-label">Kurs IDR Sekarang</div></div>
+  <div class="rates-grid au d1">
+    <div class="rcard"><div class="rcard-pair">USD / IDR</div><div class="rcard-val" id="r-usd">—</div><div class="rcard-sub">1 Dolar AS</div></div>
+    <div class="rcard"><div class="rcard-pair">EUR / IDR</div><div class="rcard-val" id="r-eur">—</div><div class="rcard-sub">1 Euro</div></div>
+    <div class="rcard"><div class="rcard-pair">GBP / IDR</div><div class="rcard-val" id="r-gbp">—</div><div class="rcard-sub">1 Pound Sterling</div></div>
+    <div class="rcard"><div class="rcard-pair">XAU / USD</div><div class="rcard-val" id="r-xau">—</div><div class="rcard-sub">1 Troy Oz Emas</div></div>
+  </div>
+
+  <div class="au d1"><div class="sec-label">Menu</div></div>
+  <div class="menu-grid au d2">
+    <a href="clock.html" class="mcard" style="--cg:rgba(232,184,75,.08)">
+      <span class="mcard-icon">🕐</span>
+      <div class="mcard-title">Waktu</div>
+      <div class="mcard-desc">Jam dunia 4 zona, alarm, stopwatch &amp; timer dengan mode multi. Semua lengkap.</div>
+      <span class="mcard-arrow">↗</span><span class="mcard-bg">◷</span>
+    </a>
+    <a href="currency.html" class="mcard" style="--cg:rgba(125,186,132,.05)">
+      <span class="mcard-icon">💱</span>
+      <div class="mcard-title">Kurs Mata Uang</div>
+      <div class="mcard-desc">Konverter IDR real-time ke berbagai mata uang plus XAU/USD emas &amp; grafik tren.</div>
+      <span class="mcard-arrow">↗</span><span class="mcard-bg">◈</span>
+    </a>
+    <a href="calculator.html" class="mcard" style="--cg:rgba(110,168,212,.05)">
+      <span class="mcard-icon">🧮</span>
+      <div class="mcard-title">Kalkulator</div>
+      <div class="mcard-desc">Kalkulator dengan riwayat lengkap. Bisa kasih catatan &amp; paste angka dari mana saja.</div>
+      <span class="mcard-arrow">↗</span><span class="mcard-bg">⊞</span>
+    </a>
+    <a href="notes.html" class="mcard" style="--cg:rgba(168,132,212,.05)">
+      <span class="mcard-icon">📝</span>
+      <div class="mcard-title">Notes</div>
+      <div class="mcard-desc">Catatan pintar dengan rich text, checkbox, copy block, tag, sync Firebase real-time lintas perangkat.</div>
+      <span class="mcard-arrow">↗</span><span class="mcard-bg">✎</span>
+    </a>
+  </div>
+
+</div>
+
+<script>
+  function fmtTime(d,tz){return new Intl.DateTimeFormat('id-ID',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(d)}
+  const ZONES=[{id:'s-id',tz:'Asia/Jakarta'},{id:'s-ie',tz:'Europe/Dublin'},{id:'s-ny',tz:'America/New_York'},{id:'s-ch',tz:'Europe/Zurich'}];
+
+  // Sapaan kondisional berdasarkan jam WIB
+  const SALAM=[
+    [0,4,  ['Ini jam berapa, Bos Agus? Istirahat dulu dong 😵','Kamu tidur nggak sih, Abang? Subuh-subuh masih on 🌙','Masih melek, Bos? Respect tapi serem juga 😂']],
+    [4,6,  ['Subuh-subuh udah on, Abang Agus? Kamu serius banget 💪','Eh Bos, jam segini udah nyalain laptop? Mantap 🌄']],
+    [6,10, ['Selamat pagi, Bos Agus! Gaskeun harinya ☀️','Pagi, Abang! Aku udah standby dari tadi 😄','Hei Bos Agus, pagi! Hari ini mau conquerin apa? 🔥']],
+    [10,13,['Udah siang, Bos Agus! Udah makan belum? 🍛','Hei Abang, siang nih! Semangat terus ya 💫','Tengah hari, Bos — jangan skip makan, nanti pusing ngitung 😄']],
+    [13,16,['Siang Bos Agus! Masih produktif kan? 🎯','Abang Agus, siang bolong nih — kopi dulu kali 😏','Hei Bos, aku di sini kalau butuh aku 🫡']],
+    [16,19,['Sore nih, Abang Agus! Udah achievement apa hari ini? 🌤','Sore, Bos! Hampir done nih — tinggal dikit lagi 💪','Eh Abang, sore! Kayaknya enak tuh ngeteh sekarang ☕']],
+    [19,22,['Malam, Bos Agus! Lagi ngeboost atau lagi santai? 🎮','Selamat malam, Abang — aku standby buat kamu 🌙','Malem nih, Bos Agus! Gaskeun sesi malamnya 🔥']],
+    [22,24,['Malem banget, Abang Agus... kamu gapapa? 😴','Eh Bos, udah jam segini — istirahat juga penting loh 😂','Masih on jam segini, Bos? Kamu kuat banget sumpah 🦾']],
+  ];
+
+  (function(){
+    const h=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Jakarta',hour:'numeric',hour12:false}).format(new Date()));
+    for(const[dari,ke,arr] of SALAM){
+      if(h>=dari&&h<ke){document.getElementById('salam').textContent=arr[Math.floor(Math.random()*arr.length)];return;}
+    }
+    document.getElementById('salam').textContent='Aku siap, Abang Agus 🚀';
+  })();
+
+  function tick(){
+    const now=new Date();
+    document.getElementById('topbar-time').textContent=fmtTime(now,'Asia/Jakarta')+' WIB • Bandung';
+    ZONES.forEach(z=>{const el=document.getElementById(z.id);if(el)el.textContent=fmtTime(now,z.tz);});
+  }
+  tick();setInterval(tick,1000);
+
+  async function fetchRates(){
+    const fmt=n=>'Rp\u202f'+Math.round(n).toLocaleString('id-ID');
+    try{
+      const res=await fetch('https://api.frankfurter.app/latest?from=IDR&to=USD,EUR,GBP');
+      const d=await res.json();
+      if(!d.rates)throw new Error();
+      document.getElementById('r-usd').textContent=fmt(1/d.rates.USD);
+      document.getElementById('r-eur').textContent=fmt(1/d.rates.EUR);
+      document.getElementById('r-gbp').textContent=fmt(1/d.rates.GBP);
+      document.querySelectorAll('.rcard').forEach(c=>{
+        if(!c.querySelector('.rcard-live')){const l=document.createElement('div');l.className='rcard-live';l.textContent='ECB Live';c.appendChild(l);}
+      });
+    }catch{
+      document.getElementById('r-usd').textContent=fmt(16350);
+      document.getElementById('r-eur').textContent=fmt(17800);
+      document.getElementById('r-gbp').textContent=fmt(20900);
+    }
+    // XAU — fetch live dari metals.live
+    try{
+      const rx=await fetch('https://metals.live/api/spot');
+      const dx=await rx.json();
+      const gold=Array.isArray(dx)?dx[0].gold:dx.gold;
+      if(!gold)throw new Error();
+      document.getElementById('r-xau').textContent='$'+parseFloat(gold).toLocaleString('en-US',{maximumFractionDigits:2})+' USD';
+    }catch{
+      document.getElementById('r-xau').textContent='~$3,350 USD';
+    }
+  }
+  fetchRates();setInterval(fetchRates,60*60*1000);
+</script>
+<div id="c-dot"></div>
+<div id="c-ring"></div>
+<script>
+(function(){
+  var dot=document.getElementById("c-dot");
+  var ring=document.getElementById("c-ring");
+  var isMobile=function(){return window.matchMedia("(max-width: 768px)").matches;};
+  var mx=-999,my=-999,rx=-999,ry=-999,raf=null;
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function loop(){
+    rx=lerp(rx,mx,0.12); ry=lerp(ry,my,0.12);
+    ring.style.left=rx+"px"; ring.style.top=ry+"px";
+    raf=requestAnimationFrame(loop);
+  }
+  document.addEventListener("mousemove",function(e){
+    if(isMobile())return;
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+"px"; dot.style.top=my+"px";
+    dot.style.opacity="1"; ring.style.opacity="1";
+    if(!raf)loop();
+  });
+  document.addEventListener("mouseleave",function(){
+    dot.style.opacity="0"; ring.style.opacity="0";
+  });
+  document.addEventListener("mouseover",function(e){
+    if(isMobile())return;
+    var t=e.target.closest("a,button,.btn,.tab-btn");
+    dot.classList.toggle("hovering",!!t);
+    ring.classList.toggle("hovering",!!t);
+  });
+  document.addEventListener("touchstart",function(e){
+    Array.from(e.changedTouches).forEach(function(touch){
+      var r=document.createElement("div");
+      r.className="ripple-tap";
+      r.style.left=touch.clientX+"px";
+      r.style.top=touch.clientY+"px";
+      document.body.appendChild(r);
+      setTimeout(function(){r.remove();},750);
+    });
+  },{passive:true});
+})();
+</script>
+<style>
+/* ── GLOBAL NOTIF BANNER ── */
+.orbit-notif-wrap{position:fixed;top:60px;right:1.2rem;z-index:99000;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:min(340px,92vw)}
+.orbit-notif{background:var(--bg1,#13110f);border:1px solid rgba(232,184,75,.38);border-radius:16px;padding:13px 16px 13px 14px;display:flex;align-items:flex-start;gap:11px;pointer-events:all;cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(232,184,75,.08);transform:translateX(110%);opacity:0;transition:transform .38s cubic-bezier(0.34,1.56,0.64,1),opacity .3s ease;position:relative;overflow:hidden}
+.orbit-notif.in{transform:translateX(0);opacity:1}
+.orbit-notif.out{transform:translateX(110%);opacity:0;transition:transform .28s ease,opacity .22s ease}
+.orbit-notif::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--on-color,#e8b84b),transparent)}
+.orbit-notif-icon{font-size:1.5rem;flex-shrink:0;line-height:1;margin-top:1px}
+.orbit-notif-body{flex:1;min-width:0}
+.orbit-notif-type{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:var(--on-color,#e8b84b);margin-bottom:2px;opacity:.8}
+.orbit-notif-title{font-family:'Sora',sans-serif;font-size:.88rem;font-weight:600;color:#f0ead8;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.orbit-notif-sub{font-family:'DM Mono',monospace;font-size:.68rem;color:#6a5e48;margin-top:2px;letter-spacing:.04em}
+.orbit-notif-close{flex-shrink:0;background:none;border:none;color:#6a5e48;font-size:1rem;cursor:pointer;padding:0;line-height:1;margin-top:1px;transition:color .15s}
+.orbit-notif-close:hover{color:#f0ead8}
+.orbit-notif-progress{position:absolute;bottom:0;left:0;height:2px;background:var(--on-color,#e8b84b);opacity:.35;transform-origin:left;animation:notif-progress linear forwards}
+@keyframes notif-progress{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+/* alarm variant */
+.orbit-notif.alarm{--on-color:#d9534a;border-color:rgba(217,83,74,.4);animation:notif-shake .5s ease}
+@keyframes notif-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+/* go-to-clock pill */
+.orbit-notif-go{display:inline-block;margin-top:6px;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:var(--on-color,#e8b84b);background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.18);border-radius:100px;padding:3px 10px;text-decoration:none;transition:background .15s}
+.orbit-notif-go:hover{background:rgba(232,184,75,.16)}
+</style>
+
+<div class="orbit-notif-wrap" id="orbit-notif-wrap"></div>
+
+<!-- ── FLOATING KALKULATOR PiP ── -->
+<button class="calc-fab" id="calc-fab-btn" title="Buka kalkulator mengambang">
+  <span class="calc-fab-dot"></span>
+  <span id="calc-fab-label">Kalkulator</span>
+</button>
+
+<script type="module">
+(function(){
+  const btn      = document.getElementById('calc-fab-btn');
+  const btnLabel = document.getElementById('calc-fab-label');
+
+  if (!('documentPictureInPicture' in window)) {
+    btn.classList.add('not-supported');
+    btn.title = 'Browser tidak mendukung PiP. Gunakan Chrome 116+';
+    btnLabel.textContent = 'Tidak Didukung';
+    return;
+  }
+
+  let pipWin = null;
+
+  function buildPipHTML() {
+    return `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300;600;700&display=swap" rel="stylesheet">
+<title>Kalkulator</title>
+<style>
+  :root{
+    --bg0:#0a0908;--bg1:#13110f;--bg2:#1c1814;--bg3:#252018;
+    --border:rgba(232,184,75,0.14);--border2:rgba(232,184,75,0.28);
+    --gold:#e8b84b;--gold2:#c4873a;--text:#f0ead8;--text2:#a8997a;
+    --text3:#6a5e48;--red:#d9534a;--green:#7dba84;
+    --spring:cubic-bezier(0.34,1.56,0.64,1);
+    --ease:cubic-bezier(0.4,0,0.2,1);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;background:var(--bg0);color:var(--text);font-family:'Sora',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  body::after{content:'';position:fixed;inset:0;opacity:.035;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  /* ── pip header ── */
+  .pip-header{display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:32px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;position:relative;overflow:hidden;}
+  .pip-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.35;}
+  .pip-header-brand{display:flex;align-items:center;gap:6px;}
+  .pip-header-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);opacity:.7;flex-shrink:0;box-shadow:0 0 6px rgba(232,184,75,.5);}
+  .pip-header-title{font-family:'Cormorant Garamond',serif;font-size:.78rem;font-weight:700;letter-spacing:.08em;color:var(--gold);opacity:.88;line-height:1;}
+  .pip-header-sep{width:1px;height:12px;background:var(--border2);margin:0 2px;}
+  .pip-header-sub{font-family:'DM Mono',monospace;font-size:.44rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text3);}
+  /* ── screen ── */
+  .pip-screen{padding:10px 16px 8px;background:linear-gradient(175deg,var(--bg2) 0%,var(--bg1) 100%);border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+  .pip-screen::before{content:'';position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(232,184,75,.06) 0%,transparent 70%);pointer-events:none;}
+  .pip-expr{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text3);text-align:right;min-height:1.2em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:all .2s;}
+  .pip-disp{font-family:'DM Mono',monospace;font-weight:300;color:var(--text);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .15s,font-size .2s var(--spring);font-size:2.2rem;line-height:1.1;padding-top:2px;}
+  .pip-disp.hasil{color:var(--gold);}
+  /* ── keypad ── */
+  .pip-keypad{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,1fr);gap:0;background:var(--bg0);flex:1;border-top:1px solid var(--border);height:100%;}
+  .key{border:none;border-right:1px solid rgba(232,184,75,.06);border-bottom:1px solid rgba(232,184,75,.06);font-family:'Sora',sans-serif;font-weight:500;cursor:pointer;background:var(--bg1);color:var(--text);display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .1s;position:relative;overflow:hidden;height:100%;font-size:1rem;}
+  .key::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at var(--rx,50%) var(--ry,50%),rgba(232,184,75,.2) 0%,transparent 60%);opacity:0;transition:opacity .15s;}
+  .key:active::after{opacity:1;}
+  .key:hover{background:var(--bg2);}
+  .key:active{background:var(--bg3);transform:scale(.96);}
+  .key.fn{background:var(--bg2);color:var(--text2);font-size:.82rem;}
+  .key.fn:hover{background:var(--bg3);color:var(--gold);}
+  .key.op{background:var(--bg2);color:var(--gold2);font-size:1.05rem;}
+  .key.op:hover{background:var(--bg3);color:var(--gold);}
+  .key.eq{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--bg0);font-size:1.1rem;grid-row:span 2;box-shadow:inset 0 1px 0 rgba(255,255,255,.15);}
+  .key.eq:hover{background:linear-gradient(135deg,#f0c45a,#d4943f);}
+  .key.zero{grid-column:span 2;justify-content:flex-start;padding-left:20px;}
+  /* ── history ── */
+  .pip-hist{border-top:1px solid var(--border);background:var(--bg0);flex-shrink:0;}
+  .pip-hist-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:var(--bg2);border-bottom:1px solid var(--border);}
+  .pip-hist-lbl{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);}
+  .hist-clr-btn{background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:.5rem;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:4px;transition:all .15s;}
+  .hist-clr-btn:hover{color:var(--red);background:rgba(217,83,74,.1);}
+  .pip-hist-list{max-height:72px;overflow-y:auto;}
+  .pip-hist-list::-webkit-scrollbar{width:3px}
+  .pip-hist-list::-webkit-scrollbar-track{background:var(--bg0)}
+  .pip-hist-list::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:99px}
+  .hrow{display:flex;align-items:center;justify-content:space-between;padding:5px 14px;border-bottom:1px solid rgba(232,184,75,.04);transition:background .12s;cursor:pointer;}
+  .hrow:hover{background:var(--bg2);}
+  .hrow-expr{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .hrow-res{font-family:'DM Mono',monospace;font-size:.74rem;color:var(--gold);flex-shrink:0;margin-left:8px;padding:2px 6px;border-radius:5px;transition:all .15s;}
+  .hrow:hover .hrow-res{background:var(--gold);color:var(--bg0);}
+  .hist-empty{text-align:center;padding:14px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;}
+  #app{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+  #keypad-wrap{flex:1;display:flex;flex-direction:column;min-height:0;}
+
+  /* ── custom cursor ── */
+  *,*::before,*::after{cursor:none!important;}
+  #pip-c-dot{position:fixed;width:6px;height:6px;background:#e8b84b;border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .2s,height .2s;opacity:0;}
+  #pip-c-ring{position:fixed;width:32px;height:32px;border:1.5px solid rgba(232,184,75,.55);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width .25s,height .25s,border-color .25s;opacity:0;}
+  #pip-c-dot.hovering{width:10px;height:10px;}
+  #pip-c-ring.hovering{width:48px;height:48px;border-color:rgba(232,184,75,.85);}
+</style>
+</head>
+<body>
+<div id="pip-c-dot"></div>
+<div id="pip-c-ring"></div>
+<div id="app">
+  <div class="pip-header">
+    <div class="pip-header-brand">
+      <div class="pip-header-dot"></div>
+      <span class="pip-header-title">Abagja Orbit</span>
+      <div class="pip-header-sep"></div>
+      <span class="pip-header-sub">Kalkulator</span>
+    </div>
+  </div>
+  <div class="pip-screen">
+    <div class="pip-expr" id="expr"></div>
+    <div class="pip-disp" id="disp">0</div>
+  </div>
+  <div id="keypad-wrap">
+    <div class="pip-keypad">
+      <button class="key fn" data-a="clear">AC</button>
+      <button class="key fn" data-a="sign">+/−</button>
+      <button class="key fn" data-a="pct">%</button>
+      <button class="key op" data-a="op" data-v="÷">÷</button>
+      <button class="key" data-a="num" data-v="7">7</button>
+      <button class="key" data-a="num" data-v="8">8</button>
+      <button class="key" data-a="num" data-v="9">9</button>
+      <button class="key op" data-a="op" data-v="×">×</button>
+      <button class="key" data-a="num" data-v="4">4</button>
+      <button class="key" data-a="num" data-v="5">5</button>
+      <button class="key" data-a="num" data-v="6">6</button>
+      <button class="key op" data-a="op" data-v="−">−</button>
+      <button class="key" data-a="num" data-v="1">1</button>
+      <button class="key" data-a="num" data-v="2">2</button>
+      <button class="key" data-a="num" data-v="3">3</button>
+      <button class="key op" data-a="op" data-v="+">+</button>
+      <button class="key zero" data-a="num" data-v="0">0</button>
+      <button class="key" data-a="dec">.</button>
+      <button class="key eq" data-a="eq">=</button>
+    </div>
+  </div>
+  <div class="pip-hist">
+    <div class="pip-hist-hd">
+      <span class="pip-hist-lbl">Riwayat</span>
+      <button class="hist-clr-btn" id="hist-clr">Hapus</button>
+    </div>
+    <div class="pip-hist-list" id="hist-list">
+      <div class="hist-empty">Belum ada riwayat</div>
+    </div>
+  </div>
+</div>
+<script>
+  var state={disp:'0',expr:'',op1:null,curOp:null,waitOp:false,equaled:false};
+  var history=[];
+  var dispEl=document.getElementById('disp');
+  var exprEl=document.getElementById('expr');
+  function fmtN(n){return Number.isInteger(n)?n.toString():parseFloat(n.toFixed(8)).toString();}
+  function setDisp(v){
+    state.disp=String(v);
+    var n=parseFloat(state.disp);
+    dispEl.textContent=isNaN(n)?state.disp:n.toLocaleString('id-ID',{maximumFractionDigits:10});
+    var len=dispEl.textContent.length;
+    dispEl.style.fontSize=len>12?'1.6rem':len>9?'2rem':'2.2rem';
+  }
+  function compute(a,b,op){
+    var R=function(n){return Math.round(n*1e10)/1e10;};
+    if(op==='+')return R(a+b);if(op==='−')return R(a-b);
+    if(op==='×')return R(a*b);if(op==='÷')return b!==0?R(a/b):'Error';
+  }
+  function inputNum(n){dispEl.classList.remove('hasil');if(state.waitOp||state.equaled){if(state.equaled){state.expr='';state.equaled=false;}setDisp(n);state.waitOp=false;}else{setDisp(state.disp==='0'?n:state.disp+n);}}
+  function inputDec(){dispEl.classList.remove('hasil');if(state.waitOp){setDisp('0.');state.waitOp=false;return;}if(!state.disp.includes('.'))setDisp(state.disp+'.');}
+  function inputOp(op){dispEl.classList.remove('hasil');var cur=parseFloat(state.disp);if(state.op1!==null&&!state.waitOp){var r=compute(state.op1,cur,state.curOp);setDisp(r);state.op1=r;}else{state.op1=cur;}state.expr=state.disp+' '+op;exprEl.textContent=state.expr;state.curOp=op;state.waitOp=true;state.equaled=false;}
+  function doEq(){
+    if(state.curOp===null||state.waitOp)return;
+    var cur=parseFloat(state.disp);
+    var r=compute(state.op1,cur,state.curOp);
+    var full=fmtN(state.op1)+' '+state.curOp+' '+fmtN(cur)+' =';
+    exprEl.textContent=full;setDisp(r);dispEl.classList.add('hasil');
+    state.op1=null;state.curOp=null;state.waitOp=false;state.equaled=true;
+    addHist(full,r);
+    try{window.opener&&window.opener.postMessage({type:'pip-calc-result',expr:full,result:r},'*');}catch(e){}
+  }
+  function doClear(){state.disp='0';state.expr='';state.op1=null;state.curOp=null;state.waitOp=false;state.equaled=false;dispEl.textContent='0';dispEl.classList.remove('hasil');exprEl.textContent='';}
+  function doSign(){setDisp(parseFloat(state.disp)*-1);}
+  function doPct(){setDisp(parseFloat(state.disp)/100);}
+  function doBk(){if(state.disp.length>1)setDisp(state.disp.slice(0,-1));else setDisp('0');}
+  function addHist(expr,result){
+    var now=new Date();
+    var t=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    history.unshift({expr:expr,result:result,time:t});
+    if(history.length>30)history.pop();
+    renderHist();
+  }
+  function renderHist(){
+    var list=document.getElementById('hist-list');
+    if(!history.length){list.innerHTML='<div class="hist-empty">Belum ada riwayat</div>';return;}
+    list.innerHTML=history.slice(0,10).map(function(h,i){
+      return '<div class="hrow" onclick="reuseIdx('+i+')"><span class="hrow-expr">'+h.expr+'</span><span class="hrow-res">'+fmtN(h.result)+'</span></div>';
+    }).join('');
+  }
+  window.reuseIdx=function(i){var h=history[i];if(!h)return;setDisp(h.result);dispEl.classList.add('hasil');state.op1=h.result;state.waitOp=true;state.equaled=false;};
+  document.getElementById('hist-clr').addEventListener('click',function(){history=[];renderHist();});
+  document.querySelectorAll('.key').forEach(function(k){
+    k.addEventListener('click',function(){
+      var a=k.dataset.a,v=k.dataset.v;
+      if(a==='num')inputNum(v);else if(a==='op')inputOp(v);else if(a==='eq')doEq();
+      else if(a==='clear')doClear();else if(a==='sign')doSign();else if(a==='pct')doPct();else if(a==='dec')inputDec();
+    });
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key>='0'&&e.key<='9')inputNum(e.key);
+    else if(e.key==='.')inputDec();
+    else if(e.key==='+')inputOp('+');
+    else if(e.key==='-')inputOp('−');
+    else if(e.key==='*')inputOp('×');
+    else if(e.key==='/'){e.preventDefault();inputOp('÷');}
+    else if(e.key==='Enter'||e.key==='=')doEq();
+    else if(e.key==='Escape')doClear();
+    else if(e.key==='Backspace')doBk();
+    else if(e.key==='%')doPct();
+  });
+
+  // ── CUSTOM CURSOR ──
+  (function(){
+    var dot=document.getElementById('pip-c-dot');
+    var ring=document.getElementById('pip-c-ring');
+    var mx=-999,my=-999,rx=-999,ry=-999,raf=null;
+    function lerp(a,b,t){return a+(b-a)*t;}
+    function loop(){rx=lerp(rx,mx,.12);ry=lerp(ry,my,.12);ring.style.left=rx+'px';ring.style.top=ry+'px';raf=requestAnimationFrame(loop);}
+    document.addEventListener('mousemove',function(e){
+      mx=e.clientX;my=e.clientY;
+      dot.style.left=mx+'px';dot.style.top=my+'px';
+      dot.style.opacity='1';ring.style.opacity='1';
+      if(!raf)loop();
+    });
+    document.addEventListener('mouseleave',function(){dot.style.opacity='0';ring.style.opacity='0';});
+    document.addEventListener('mouseover',function(e){
+      var t=e.target.closest('button');
+      dot.classList.toggle('hovering',!!t);
+      ring.classList.toggle('hovering',!!t);
+    });
+  })();
+<\/script>
+</body></html>`;
+  }
+
+  // ── Firebase save dari PiP ──
+  import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js').then(function(m){
+    return import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js').then(function(fs){
+      var cfg={apiKey:"AIzaSyCJlPlTfMXYwPuykQhsx-duxM_LfTU68gA",authDomain:"abagja-orbit.firebaseapp.com",projectId:"abagja-orbit",storageBucket:"abagja-orbit.firebasestorage.app",messagingSenderId:"554354531256",appId:"1:554354531256:web:19d90218bd6dbcb9ed8d4d"};
+      var app; try{app=m.initializeApp(cfg,'calc-pip-home');}catch(e){try{app=m.getApp('calc-pip-home');}catch(e2){}}
+      if(!app)return;
+      var db=fs.getFirestore(app);
+      var col=fs.collection(db,'calc_history');
+      window._pipSaveToFirebase=async function(fullExpr,r){
+        try{
+          await fs.addDoc(col,{expr:fullExpr,result:r,note:'',time:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),createdAt:Date.now()});
+        }catch(e){}
+      };
+    });
+  }).catch(function(){});
+
+  // Terima hasil dari PiP window
+  window.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='pip-calc-result'){
+      if(window._pipSaveToFirebase)window._pipSaveToFirebase(e.data.expr,e.data.result);
+    }
+  });
+
+  async function openPip(){
+    try{
+      if(pipWin&&!pipWin.closed)pipWin.close();
+      pipWin=await window.documentPictureInPicture.requestWindow({width:340,height:460,disallowReturnToOpener:false});
+      pipWin.document.open();
+      pipWin.document.write(buildPipHTML());
+      pipWin.document.close();
+      btn.classList.add('active');
+      btnLabel.textContent='Tutup';
+      pipWin.addEventListener('pagehide',function(){
+        btn.classList.remove('active');
+        btnLabel.textContent='Kalkulator';
+        pipWin=null;
+      });
+    }catch(err){
+      alert('Gagal membuka PiP. Gunakan Chrome 116+ dan buka via HTTPS atau localhost.');
+    }
+  }
+
+  function closePip(){
+    if(pipWin&&!pipWin.closed)pipWin.close();
+    pipWin=null;
+    btn.classList.remove('active');
+    btnLabel.textContent='Kalkulator';
+  }
+
+  btn.addEventListener('click',function(){
+    if(pipWin&&!pipWin.closed)closePip();
+    else openPip();
+  });
+})();
+</script>
+
+<script>
+(function(){
+  // ── CONFIG ──
+  var CLOCK_PAGE = 'clock.html'; // sesuaikan path jika perlu
+  var ch = null;
+  try{ ch = new BroadcastChannel('orbit-notif'); }catch(e){}
+
+  // ── AUDIO (Web Audio API) ──
+  var actx = null;
+  function getCtx(){
+    if(!actx) actx = new(window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended') actx.resume();
+    return actx;
+  }
+  function beep(freq,dur,vol,delay,type){
+    try{
+      var c=getCtx(),o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);
+      o.frequency.value=freq; o.type=type||'sine';
+      var t=c.currentTime+delay;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(vol,t+0.01);
+      g.gain.exponentialRampToValueAtTime(.001,t+dur);
+      o.start(t); o.stop(t+dur+.02);
+    }catch(e){}
+  }
+  var ringIntervals = {};
+  function startRing(id, type){
+    stopRing(id);
+    function once(){
+      if(type==='alarm'){
+        beep(1047,.12,.45,0,'square'); beep(1319,.12,.45,.13,'square');
+        beep(1047,.12,.45,.26,'square'); beep(1319,.12,.45,.39,'square');
+        beep(880,.4,.4,.54,'sine');
+      } else {
+        beep(660,.15,.28,0); beep(880,.15,.28,.18); beep(1100,.25,.28,.36);
+      }
+    }
+    once();
+    ringIntervals[id] = setInterval(once, type==='alarm'?1700:2200);
+  }
+  function stopRing(id){
+    if(ringIntervals[id]){ clearInterval(ringIntervals[id]); delete ringIntervals[id]; }
+  }
+
+  // ── BANNER ──
+  var wrap = document.getElementById('orbit-notif-wrap');
+  var timers = {};
+  function showBanner(data){
+    // data: { id, type:'alarm'|'timer'|'stopwatch', title, sub, dur }
+    // dur = ms sebelum auto-dismiss (0 = sticky)
+    var id = data.id || ('n-'+Date.now());
+    // Hapus duplikat
+    var old = document.getElementById('onotif-'+id);
+    if(old) old.remove();
+
+    var isAlarm = data.type === 'alarm';
+    var icon = isAlarm ? '&#x23F0;' : (data.type==='stopwatch' ? '&#x23F2;' : '&#x23F1;');
+    var label = isAlarm ? 'ALARM' : (data.type==='stopwatch' ? 'STOPWATCH' : 'TIMER');
+    var dur = data.dur || (isAlarm ? 0 : 8000);
+
+    var el = document.createElement('div');
+    el.className = 'orbit-notif' + (isAlarm ? ' alarm' : '');
+    el.id = 'onotif-'+id;
+    el.innerHTML =
+      '<span class="orbit-notif-icon">'+icon+'</span>'+
+      '<div class="orbit-notif-body">'+
+        '<div class="orbit-notif-type">'+label+'</div>'+
+        '<div class="orbit-notif-title">'+escHtml(data.title)+'</div>'+
+        (data.sub ? '<div class="orbit-notif-sub">'+escHtml(data.sub)+'</div>' : '')+
+        '<a class="orbit-notif-go" href="'+CLOCK_PAGE+'">Buka Clock &#x2192;</a>'+
+      '</div>'+
+      '<button class="orbit-notif-close" aria-label="Tutup">&#x2715;</button>'+
+      (dur ? '<div class="orbit-notif-progress" style="animation-duration:'+dur+'ms"></div>' : '');
+
+    wrap.appendChild(el);
+    // Slide in
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('in'); }); });
+
+    // Suara
+    startRing(id, data.type);
+    // Vibrasi
+    if(navigator.vibrate) navigator.vibrate(isAlarm ? [400,150,400,150,400,150,800] : [300,150,300]);
+
+    function dismiss(){
+      stopRing(id);
+      el.classList.add('out');
+      clearTimeout(timers[id]);
+      setTimeout(function(){ el.remove(); }, 400);
+      // Broadcast dismiss supaya semua tab tahu
+      if(ch) ch.postMessage({action:'dismiss', id:id});
+    }
+
+    el.querySelector('.orbit-notif-close').addEventListener('click', function(e){
+      e.stopPropagation(); dismiss();
+    });
+    el.addEventListener('click', function(){ window.location.href = CLOCK_PAGE; });
+
+    if(dur) timers[id] = setTimeout(dismiss, dur);
+
+    // Auto re-ring alarm setiap 30 detik jika belum dismiss
+    if(isAlarm){
+      timers['vib-'+id] = setInterval(function(){
+        if(document.getElementById('onotif-'+id)){
+          el.classList.remove('alarm');
+          void el.offsetWidth;
+          el.classList.add('alarm');
+          if(navigator.vibrate) navigator.vibrate([400,150,400,150,800]);
+        } else { clearInterval(timers['vib-'+id]); }
+      }, 30000);
+    }
+  }
+
+  function escHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+
+  // ── LISTEN BroadcastChannel ──
+  if(ch){
+    ch.addEventListener('message', function(e){
+      var d = e.data;
+      if(!d) return;
+      if(d.action==='notify') showBanner(d);
+      if(d.action==='dismiss'){
+        var el=document.getElementById('onotif-'+d.id);
+        if(el){ stopRing(d.id); el.classList.add('out'); setTimeout(function(){el.remove();},400); }
+      }
+    });
+  }
+
+  // ── LISTEN Firestore alarm (untuk alarm cross-device) ──
+  // Inject Firebase listener jika Firebase tersedia di halaman ini
+  // atau via dynamic import
+  function listenFirebaseAlarms(){
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js').then(function(m){
+      var initializeApp = m.initializeApp;
+      return import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js').then(function(fs){
+        var cfg = {
+          apiKey:"AIzaSyCJlPlTfMXYwPuykQhsx-duxM_LfTU68gA",
+          authDomain:"abagja-orbit.firebaseapp.com",
+          projectId:"abagja-orbit",
+          storageBucket:"abagja-orbit.firebasestorage.app",
+          messagingSenderId:"554354531256",
+          appId:"1:554354531256:web:19d90218bd6dbcb9ed8d4d"
+        };
+        var app;
+        try{ app=initializeApp(cfg,'notif-listener'); }catch(e){ app=m.getApps?m.getApps()[0]:null; }
+        if(!app) return;
+        var db = fs.getFirestore(app);
+        // Listen ke collection 'notif-events' — clock.html akan menulis ke sini saat trigger
+        fs.onSnapshot(
+          fs.query(fs.collection(db,'notif-events'), fs.orderBy('ts','desc'), fs.limit(1)),
+          function(snap){
+            snap.docChanges().forEach(function(change){
+              if(change.type!=='added') return;
+              var d = change.doc.data();
+              // Hanya proses event yang fresh (< 10 detik)
+              if(Date.now()-d.ts > 10000) return;
+              showBanner({id:change.doc.id, type:d.type, title:d.title, sub:d.sub, dur:d.type==='alarm'?0:8000});
+            });
+          }
+        );
+      });
+    }).catch(function(){});
+  }
+  listenFirebaseAlarms();
+
+  // Expose global supaya clock.html bisa trigger
+  window.orbitNotif = { show: showBanner };
+})();
+</script>
+
+</body>
+</html>
