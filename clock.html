@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waktu — Abagja Orbit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg0:#0a0908;--bg1:#13110f;--bg2:#1c1814;--bg3:#252018;--border:rgba(232,184,75,0.12);--border2:rgba(232,184,75,0.26);--gold:#e8b84b;--gold2:#c4873a;--gold-dim:rgba(232,184,75,0.10);--text:#f0ead8;--text2:#a8997a;--text3:#6a5e48;--red:#d9534a;--green:#7dba84;--radius:14px;--radius-lg:20px;--ease:cubic-bezier(0.4,0,0.2,1);--spring:cubic-bezier(0.34,1.56,0.64,1)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Sora',sans-serif;background:var(--bg0);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+    body::before{content:'';position:fixed;inset:0;opacity:.028;pointer-events:none;z-index:9999;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:52px;background:rgba(10,9,8,.88);backdrop-filter:blur(24px);border-bottom:1px solid rgba(232,184,75,0.08)}
+    .back-btn{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;letter-spacing:.14em;opacity:.75;transition:all .2s}
+    .back-btn:hover{opacity:1}
+    .back-btn .arr{color:var(--text3);transition:transform .2s}
+    .back-btn:hover .arr{transform:translateX(-3px)}
+    .page-badge{font-family:'DM Mono',monospace;font-size:.56rem;color:var(--text3);letter-spacing:.22em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+    .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+    .sync-dot.ok{background:var(--green);animation:sdot 2.5s ease infinite}
+    .sync-dot.syncing{background:var(--gold);animation:sdot .5s ease infinite}
+    .sync-dot.err{background:var(--red);animation:none}
+    @keyframes sdot{0%,100%{opacity:1}50%{opacity:.25}}
+    .page{padding-top:52px}
+    .container{max-width:1100px;margin:0 auto;padding:2.5rem 2rem 5rem}
+    .page-header{margin-bottom:2rem}
+    .page-header h1{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:600;letter-spacing:-.01em}
+    .page-header p{margin-top:4px;font-size:.82rem;color:var(--text3);font-weight:300}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    @keyframes pulsered{0%{box-shadow:0 0 0 0 rgba(217,83,74,.4)}100%{box-shadow:0 0 0 18px rgba(217,83,74,0)}}
+    @keyframes pulsegold{0%{box-shadow:0 0 0 0 rgba(232,184,75,.35)}100%{box-shadow:0 0 0 14px rgba(232,184,75,0)}}
+    .au{animation:fadeUp .44s var(--ease) both}
+    .d1{animation-delay:.07s}.d2{animation-delay:.14s}.d3{animation-delay:.21s}
+    .tabs{display:flex;gap:4px;background:var(--bg2);padding:4px;border-radius:100px;margin-bottom:2rem;width:fit-content;border:1px solid var(--border);flex-wrap:wrap}
+    .tab-btn{padding:7px 17px;border-radius:100px;border:none;font-family:'Sora',sans-serif;font-size:.75rem;font-weight:500;cursor:pointer;color:var(--text3);background:transparent;transition:all .2s var(--ease)}
+    .tab-btn.active{background:var(--gold);color:var(--bg0)}
+    .tab-btn:not(.active):hover{color:var(--text)}
+    .tab-content{display:none}.tab-content.active{display:block}
+    .clock-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+    @media(max-width:680px){.clock-grid{grid-template-columns:1fr}}
+    .cc{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;position:relative;overflow:hidden;transition:all .28s var(--ease)}
+    .cc:hover{transform:translateY(-3px);border-color:var(--border2);box-shadow:0 10px 36px rgba(0,0,0,.45)}
+    .cc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity .3s}
+    .cc:hover::after{opacity:.5}
+    .cc-top{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+    .cc-flag{font-size:1.4rem}.cc-city{font-size:.92rem;font-weight:600}
+    .cc-tz{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.14em;color:var(--text3);text-transform:uppercase}
+    .cc-time{font-family:'DM Mono',monospace;font-size:2.6rem;font-weight:500;color:var(--gold);letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+    .bl{animation:blink 1s step-end infinite}
+    .cc-date{font-size:.72rem;color:var(--text3);font-weight:300}
+    .cc-diff{position:absolute;top:1.4rem;right:1.4rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);background:var(--bg2);border:1px solid var(--border);padding:3px 9px;border-radius:100px}
+    .cc-analog{position:absolute;bottom:1rem;right:1.2rem;width:46px;height:46px;opacity:.2}
+    .card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem}
+    .card-title{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text3);margin-bottom:1rem}
+    .divider{height:1px;background:var(--border);margin:1.1rem 0}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:9px 20px;border-radius:100px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;border:none;transition:all .2s var(--ease);letter-spacing:.02em}
+    .btn-p{background:var(--gold);color:var(--bg0)}.btn-p:hover{background:#f0c45a;transform:translateY(-1px);box-shadow:0 4px 16px rgba(232,184,75,.3)}
+    .btn-g{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-g:hover{color:var(--gold);border-color:var(--border2);background:var(--gold-dim);transform:translateY(-1px)}
+    .btn-r{background:transparent;color:var(--red);border:1px solid rgba(217,83,74,.25)}.btn-r:hover{background:rgba(217,83,74,.1)}
+    .btn:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
+    .btn-sm{padding:5px 14px;font-size:.72rem}
+    .tw{display:flex;flex-direction:column;align-items:center;padding:2rem 1rem}
+    .big-d{font-family:'DM Mono',monospace;font-size:clamp(2.8rem,9vw,5rem);font-weight:300;color:var(--text);letter-spacing:.04em;line-height:1;margin-bottom:1.5rem;text-align:center;transition:color .2s}
+    .big-d.run{color:var(--gold)}.big-d.done{color:var(--red);animation:pulsered .7s ease infinite}
+    .t-inputs{display:flex;gap:8px;align-items:center;margin-bottom:1.5rem}
+    .t-grp{display:flex;flex-direction:column;align-items:center;gap:4px}
+    .t-grp label{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text3)}
+    .t-num{width:68px;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:1.3rem;padding:8px;outline:none;transition:border-color .2s;-moz-appearance:textfield}
+    .t-num::-webkit-inner-spin-button,.t-num::-webkit-outer-spin-button{-webkit-appearance:none}
+    .t-num:focus{border-color:var(--gold)}
+    .t-sep{font-family:'DM Mono',monospace;font-size:1.3rem;color:var(--text3);margin-top:14px}
+    .ctrl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    .mode-switch{display:flex;gap:6px;margin-bottom:1.25rem}
+    .mtimer-list{display:flex;flex-direction:column;gap:.75rem}
+    .mt-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;transition:border-color .22s;animation:fadeUp .22s var(--ease) both}
+    .mt-item.run{border-color:rgba(232,184,75,.35)}.mt-item.done{border-color:rgba(217,83,74,.4)}
+    .mt-top{display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap}
+    .mt-name{flex:1;min-width:120px;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:'Sora',sans-serif;font-size:.88rem;font-weight:500;padding:3px 0;outline:none;transition:border-color .2s}
+    .mt-name:focus{border-color:var(--gold)}.mt-name::placeholder{color:var(--text3)}
+    .mt-disp{font-family:'DM Mono',monospace;font-size:1.55rem;font-weight:300;color:var(--text);letter-spacing:.04em;transition:color .2s;margin-left:auto;flex-shrink:0}
+    .mt-disp.run{color:var(--gold)}.mt-disp.done{color:var(--red)}
+    .mt-inputs{display:flex;gap:6px;align-items:center;margin-bottom:.75rem}
+    .mt-grp{display:flex;flex-direction:column;align-items:center;gap:3px}
+    .mt-grp label{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text3)}
+    .mt-num{width:54px;text-align:center;background:var(--bg1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:1rem;padding:6px;outline:none;transition:border-color .2s;-moz-appearance:textfield}
+    .mt-num::-webkit-inner-spin-button,.mt-num::-webkit-outer-spin-button{-webkit-appearance:none}
+    .mt-num:focus{border-color:var(--gold)}
+    .mt-sep{font-family:'DM Mono',monospace;font-size:.9rem;color:var(--text3);margin-top:14px}
+    .mt-ctrl{display:flex;gap:6px;flex-wrap:wrap}
+    .alarm-list{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
+    .alarm-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.2rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;transition:all .2s;animation:fadeUp .22s var(--ease) both}
+    .alarm-item.on{border-color:rgba(232,184,75,.28);background:rgba(232,184,75,.03)}
+    .alarm-item.ringing{border-color:rgba(217,83,74,.55);animation:pulsegold .65s ease infinite}
+    .alarm-time-inp{background:var(--bg1);border:1px solid var(--border);border-radius:8px;color:var(--gold);font-family:'DM Mono',monospace;font-size:1.35rem;padding:6px 10px;outline:none;transition:border-color .2s;width:128px}
+    .alarm-time-inp:focus{border-color:var(--gold)}
+    .alarm-label-inp{flex:1;min-width:100px;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text2);font-family:'Sora',sans-serif;font-size:.82rem;padding:3px 0;outline:none;transition:border-color .2s}
+    .alarm-label-inp:focus{border-color:var(--gold)}.alarm-label-inp::placeholder{color:var(--text3)}
+    .toggle{position:relative;width:42px;height:24px;flex-shrink:0;cursor:pointer}
+    .toggle input{opacity:0;width:0;height:0;position:absolute}
+    .toggle-track{position:absolute;inset:0;border-radius:100px;background:var(--bg3);border:1px solid var(--border);transition:all .2s}
+    .toggle input:checked~.toggle-track{background:var(--gold);border-color:var(--gold)}
+    .toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text3);transition:all .22s var(--spring)}
+    .toggle input:checked~.toggle-thumb{left:21px;background:var(--bg0)}
+    .laps{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+    .lap{display:flex;justify-content:space-between;align-items:center;padding:6px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-family:'DM Mono',monospace;font-size:.78rem;animation:fadeUp .18s var(--ease) both}
+    .ln{color:var(--text3)}.lt{color:var(--gold)}.ld{color:var(--text3);font-size:.68rem}
+    .lap.fast .lt{color:var(--green)}.lap.slow .lt{color:var(--red)}
+    .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--border2);border-radius:100px;padding:11px 26px;font-size:.82rem;color:var(--gold);font-family:'DM Mono',monospace;letter-spacing:.05em;opacity:0;transition:all .35s var(--spring);pointer-events:none;z-index:999;white-space:nowrap;max-width:92vw;text-align:center}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg0)}::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:99px}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-btn" href="index.html"><span class="arr">←</span> Abagja Orbit</a>
+  <span class="page-badge"><span class="sync-dot" id="sync-dot"></span>Waktu</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="page">
+  <div class="container">
+    <div class="page-header au">
+      <h1>Waktu</h1>
+      <p>Jam dunia, alarm tersinkron, timer &amp; stopwatch</p>
+    </div>
+
+    <div class="tabs au d1">
+      <button class="tab-btn active" data-tab="clocks">🌍 Jam Dunia</button>
+      <button class="tab-btn" data-tab="alarm">⏰ Alarm</button>
+      <button class="tab-btn" data-tab="timer">⏱ Timer</button>
+      <button class="tab-btn" data-tab="stopwatch">⏲ Stopwatch</button>
+    </div>
+
+    <!-- JAM DUNIA -->
+    <div class="tab-content active" id="tab-clocks">
+      <div class="clock-grid">
+        <div class="cc au"><div class="cc-diff">UTC+7</div>
+          <div class="cc-top"><span class="cc-flag">🇮🇩</span><div><div class="cc-city">Bandung, Indonesia</div><div class="cc-tz">WIB · Asia/Jakarta</div></div></div>
+          <div class="cc-time" id="t-id">--<span class="bl">:</span>--<span class="bl">:</span>--</div>
+          <div class="cc-date" id="d-id">—</div>
+          <svg class="cc-analog" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="none" stroke="#e8b84b" stroke-width="1.2"/><line id="hh-id" x1="24" y1="24" x2="24" y2="13" stroke="#e8b84b" stroke-width="2.5" stroke-linecap="round"/><line id="hm-id" x1="24" y1="24" x2="24" y2="8" stroke="#a8997a" stroke-width="1.8" stroke-linecap="round"/><line id="hs-id" x1="24" y1="24" x2="24" y2="5" stroke="#c4873a" stroke-width="1" stroke-linecap="round"/><circle cx="24" cy="24" r="2" fill="#e8b84b" opacity=".6"/></svg>
+        </div>
+        <div class="cc au d1"><div class="cc-diff">UTC+1</div>
+          <div class="cc-top"><span class="cc-flag">🇮🇪</span><div><div class="cc-city">Dublin, Ireland</div><div class="cc-tz">IST · Europe/Dublin</div></div></div>
+          <div class="cc-time" id="t-ie">--<span class="bl">:</span>--<span class="bl">:</span>--</div>
+          <div class="cc-date" id="d-ie">—</div>
+          <svg class="cc-analog" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="none" stroke="#e8b84b" stroke-width="1.2"/><line id="hh-ie" x1="24" y1="24" x2="24" y2="13" stroke="#e8b84b" stroke-width="2.5" stroke-linecap="round"/><line id="hm-ie" x1="24" y1="24" x2="24" y2="8" stroke="#a8997a" stroke-width="1.8" stroke-linecap="round"/><line id="hs-ie" x1="24" y1="24" x2="24" y2="5" stroke="#c4873a" stroke-width="1" stroke-linecap="round"/><circle cx="24" cy="24" r="2" fill="#e8b84b" opacity=".6"/></svg>
+        </div>
+        <div class="cc au d2"><div class="cc-diff">UTC−4</div>
+          <div class="cc-top"><span class="cc-flag">🇺🇸</span><div><div class="cc-city">New York, USA</div><div class="cc-tz">EDT · America/New_York</div></div></div>
+          <div class="cc-time" id="t-ny">--<span class="bl">:</span>--<span class="bl">:</span>--</div>
+          <div class="cc-date" id="d-ny">—</div>
+          <svg class="cc-analog" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="none" stroke="#e8b84b" stroke-width="1.2"/><line id="hh-ny" x1="24" y1="24" x2="24" y2="13" stroke="#e8b84b" stroke-width="2.5" stroke-linecap="round"/><line id="hm-ny" x1="24" y1="24" x2="24" y2="8" stroke="#a8997a" stroke-width="1.8" stroke-linecap="round"/><line id="hs-ny" x1="24" y1="24" x2="24" y2="5" stroke="#c4873a" stroke-width="1" stroke-linecap="round"/><circle cx="24" cy="24" r="2" fill="#e8b84b" opacity=".6"/></svg>
+        </div>
+        <div class="cc au d3"><div class="cc-diff">UTC+2</div>
+          <div class="cc-top"><span class="cc-flag">🇨🇭</span><div><div class="cc-city">Zürich, Switzerland</div><div class="cc-tz">CEST · Europe/Zurich</div></div></div>
+          <div class="cc-time" id="t-ch">--<span class="bl">:</span>--<span class="bl">:</span>--</div>
+          <div class="cc-date" id="d-ch">—</div>
+          <svg class="cc-analog" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="none" stroke="#e8b84b" stroke-width="1.2"/><line id="hh-ch" x1="24" y1="24" x2="24" y2="13" stroke="#e8b84b" stroke-width="2.5" stroke-linecap="round"/><line id="hm-ch" x1="24" y1="24" x2="24" y2="8" stroke="#a8997a" stroke-width="1.8" stroke-linecap="round"/><line id="hs-ch" x1="24" y1="24" x2="24" y2="5" stroke="#c4873a" stroke-width="1" stroke-linecap="round"/><circle cx="24" cy="24" r="2" fill="#e8b84b" opacity=".6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALARM -->
+    <div class="tab-content" id="tab-alarm">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div class="card-title" style="margin:0">Alarm — tersinkron semua device</div>
+          <button class="btn btn-p btn-sm" id="add-alarm">+ Tambah Alarm</button>
+        </div>
+        <div class="alarm-list" id="alarm-list">
+          <div style="text-align:center;color:var(--text3);font-size:.8rem;padding:2rem">Memuat alarm...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMER -->
+    <div class="tab-content" id="tab-timer">
+      <div class="mode-switch">
+        <button class="btn btn-p btn-sm" id="mode-single">Timer Tunggal</button>
+        <button class="btn btn-g btn-sm" id="mode-multi">Multi Timer</button>
+      </div>
+      <div id="single-wrap">
+        <div class="card">
+          <div class="tw">
+            <div class="big-d" id="timer-d">00:00:00</div>
+            <div class="t-inputs" id="t-inputs">
+              <div class="t-grp"><label>Jam</label><input class="t-num" id="t-h" type="number" min="0" max="99" value="0"></div>
+              <div class="t-sep">:</div>
+              <div class="t-grp"><label>Menit</label><input class="t-num" id="t-m" type="number" min="0" max="59" value="0"></div>
+              <div class="t-sep">:</div>
+              <div class="t-grp"><label>Detik</label><input class="t-num" id="t-s" type="number" min="0" max="59" value="0"></div>
+            </div>
+            <div class="ctrl">
+              <button class="btn btn-p" id="timer-start">▶ Mulai</button>
+              <button class="btn btn-g" id="timer-pause" disabled>⏸ Jeda</button>
+              <button class="btn btn-g" id="timer-reset">↺ Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="multi-wrap" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <div class="card-title" style="margin:0">Multi Timer</div>
+            <button class="btn btn-p btn-sm" id="add-mt">+ Tambah Timer</button>
+          </div>
+          <div class="mtimer-list" id="mt-list">
+            <div style="text-align:center;color:var(--text3);font-size:.8rem;padding:1.5rem">Klik "+ Tambah Timer" buat mulai.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STOPWATCH -->
+    <div class="tab-content" id="tab-stopwatch">
+      <div class="card">
+        <div class="tw">
+          <div class="big-d" id="sw-d">00:00:00<span style="font-size:.38em;color:var(--text3)" id="sw-ms">.00</span></div>
+          <div class="ctrl" style="margin-bottom:1rem">
+            <button class="btn btn-p" id="sw-start">▶ Mulai</button>
+            <button class="btn btn-g" id="sw-lap" disabled>◎ Lap</button>
+            <button class="btn btn-g" id="sw-reset">↺ Reset</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="card-title" style="margin:0">Riwayat Lap</div>
+          <button class="btn btn-g btn-sm" id="sw-clr">Hapus</button>
+        </div>
+        <div class="laps" id="laps-list"><div style="text-align:center;color:var(--text3);font-size:.78rem;padding:1.2rem">Belum ada lap</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCJlPlTfMXYwPuykQhsx-duxM_LfTU68gA",
+    authDomain: "abagja-orbit.firebaseapp.com",
+    projectId: "abagja-orbit",
+    storageBucket: "abagja-orbit.firebasestorage.app",
+    messagingSenderId: "554354531256",
+    appId: "1:554354531256:web:19d90218bd6dbcb9ed8d4d"
+  });
+  const db = getFirestore(app);
+  const alarmCol = collection(db, 'alarms');
+
+  // ── SYNC DOT ──
+  const syncDot = document.getElementById('sync-dot');
+  function setSyncing(s){ syncDot.className = 'sync-dot '+s; }
+
+  // ── TOAST ──
+  let toastTO;
+  function showToast(msg, dur=4500){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastTO); toastTO=setTimeout(()=>t.classList.remove('show'),dur);
+  }
+
+  // ── SOUND ──
+  let actx=null;
+  function getCtx(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx;}
+  function beep(freq,dur,vol,delay){
+    try{const c=getCtx(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);
+      o.frequency.value=freq;o.type='sine';const t=c.currentTime+delay;
+      g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+      o.start(t);o.stop(t+dur);}catch(e){}
+  }
+  function playDone(){beep(660,.2,.35,0);beep(880,.2,.35,.24);beep(1100,.38,.35,.48);}
+  function playAlarm(){for(let i=0;i<6;i++){beep(880,.15,.4,i*.32);beep(1100,.15,.4,i*.32+.16);}}
+
+  // ── TABS ──
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── WORLD CLOCKS ──
+  const CLOCKS=[{id:'id',tz:'Asia/Jakarta'},{id:'ie',tz:'Europe/Dublin'},{id:'ny',tz:'America/New_York'},{id:'ch',tz:'Europe/Zurich'}];
+  function pad(n){return String(n).padStart(2,'0');}
+  function setHand(id,cx,cy,len,deg){const el=document.getElementById(id);if(!el)return;const r=(deg-90)*Math.PI/180;el.setAttribute('x2',cx+len*Math.cos(r));el.setAttribute('y2',cy+len*Math.sin(r));}
+
+  let alarms=[];
+  let ringing=new Set();
+
+  function checkAlarms(now){
+    const hh=pad(now.getHours()),mm=pad(now.getMinutes()),ss=now.getSeconds();
+    alarms.forEach(a=>{
+      if(a.on&&a.time===`${hh}:${mm}`&&ss===0&&!ringing.has(a.id)){
+        ringing.add(a.id);
+        playAlarm();
+        showToast(`⏰ ${a.label||'Alarm'} — ${a.time}`,8000);
+        const el=document.getElementById('al-'+a.id);
+        if(el){el.classList.add('ringing');setTimeout(()=>el.classList.remove('ringing'),8000);}
+        setTimeout(()=>ringing.delete(a.id),62000);
+      }
+    });
+  }
+
+  function tickClocks(){
+    const now=new Date();
+    CLOCKS.forEach(c=>{
+      const p={};
+      new Intl.DateTimeFormat('en-US',{timeZone:c.tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(now).forEach(x=>{if(x.type!=='literal')p[x.type]=x.value});
+      const tel=document.getElementById('t-'+c.id);
+      if(tel)tel.innerHTML=`${p.hour}<span class="bl">:</span>${p.minute}<span class="bl">:</span>${p.second}`;
+      const del=document.getElementById('d-'+c.id);
+      if(del)del.textContent=new Intl.DateTimeFormat('id-ID',{timeZone:c.tz,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(now);
+      const ap={};
+      new Intl.DateTimeFormat('en-US',{timeZone:c.tz,hour:'numeric',minute:'numeric',second:'numeric',hour12:false}).formatToParts(now).forEach(x=>{if(x.type!=='literal')ap[x.type]=parseInt(x.value)});
+      setHand('hh-'+c.id,24,24,11,(ap.hour%12+ap.minute/60)/12*360);
+      setHand('hm-'+c.id,24,24,16,(ap.minute+ap.second/60)/60*360);
+      setHand('hs-'+c.id,24,24,19,ap.second/60*360);
+    });
+    checkAlarms(now);
+  }
+
+  // ── ALARM FIRESTORE ──
+  function renderAlarms(docs){
+    const list=document.getElementById('alarm-list');
+    if(!docs.length){list.innerHTML='<div style="text-align:center;color:var(--text3);font-size:.8rem;padding:2rem">Belum ada alarm. Klik tombol di atas.</div>';return;}
+    list.innerHTML=docs.map(({id,data})=>`
+      <div class="alarm-item ${data.on?'on':''}" id="al-${id}">
+        <input type="time" class="alarm-time-inp" value="${data.time}"
+          onchange="updateAlarm('${id}','time',this.value)">
+        <input type="text" class="alarm-label-inp" placeholder="Nama alarm (opsional)" value="${data.label}"
+          oninput="updateAlarm('${id}','label',this.value)">
+        <label class="toggle">
+          <input type="checkbox" ${data.on?'checked':''} onchange="toggleAlarm('${id}',this.checked)">
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+        <button class="btn btn-r btn-sm" onclick="deleteAlarm('${id}')">✕</button>
+      </div>`).join('');
+  }
+
+  window.updateAlarm = async(id,field,val)=>{
+    try{ await updateDoc(doc(db,'alarms',id),{[field]:val}); }catch(e){}
+  };
+  window.toggleAlarm = async(id,checked)=>{
+    try{ await updateDoc(doc(db,'alarms',id),{on:checked}); }catch(e){}
+  };
+  window.deleteAlarm = async(id)=>{
+    try{ await deleteDoc(doc(db,'alarms',id)); }catch(e){}
+  };
+
+  document.getElementById('add-alarm').addEventListener('click', async()=>{
+    setSyncing('syncing');
+    try{
+      await addDoc(alarmCol,{time:'07:00',label:'',on:true,createdAt:Date.now()});
+      setSyncing('ok');
+    }catch(e){setSyncing('err');}
+  });
+
+  // Realtime alarm listener
+  setSyncing('syncing');
+  onSnapshot(query(alarmCol,orderBy('createdAt','asc')), snap=>{
+    setSyncing('ok');
+    alarms=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAlarms(snap.docs.map(d=>({id:d.id,data:d.data()})));
+  }, ()=>setSyncing('err'));
+
+  // Start clock after firebase init
+  tickClocks();
+  setInterval(tickClocks,1000);
+
+  // ── TIMER MODE SWITCH ──
+  function setMode(m){
+    document.getElementById('single-wrap').style.display=m==='single'?'block':'none';
+    document.getElementById('multi-wrap').style.display=m==='multi'?'block':'none';
+    document.getElementById('mode-single').className='btn btn-sm '+(m==='single'?'btn-p':'btn-g');
+    document.getElementById('mode-multi').className='btn btn-sm '+(m==='multi'?'btn-p':'btn-g');
+  }
+  document.getElementById('mode-single').addEventListener('click',()=>setMode('single'));
+  document.getElementById('mode-multi').addEventListener('click',()=>setMode('multi'));
+
+  // ── SINGLE TIMER ──
+  let tInt=null,tRem=0,tRun=false;
+  const tDisp=document.getElementById('timer-d');
+  function updT(s){tDisp.textContent=`${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;}
+  document.getElementById('timer-start').addEventListener('click',()=>{
+    if(tRun)return;
+    if(!tRem){const h=+document.getElementById('t-h').value||0,m=+document.getElementById('t-m').value||0,s=+document.getElementById('t-s').value||0;tRem=h*3600+m*60+s;}
+    if(!tRem)return;
+    tRun=true;tDisp.classList.add('run');tDisp.classList.remove('done');
+    document.getElementById('t-inputs').style.opacity='.4';document.getElementById('t-inputs').style.pointerEvents='none';
+    document.getElementById('timer-pause').disabled=false;
+    tInt=setInterval(()=>{tRem--;updT(tRem);if(tRem<=0){clearInterval(tInt);tRun=false;tDisp.classList.remove('run');tDisp.classList.add('done');playDone();showToast('⏰ Timer selesai, Bos Agus!');document.getElementById('timer-pause').disabled=true;}},1000);
+  });
+  document.getElementById('timer-pause').addEventListener('click',()=>{clearInterval(tInt);tRun=false;tDisp.classList.remove('run');document.getElementById('timer-pause').disabled=true;});
+  document.getElementById('timer-reset').addEventListener('click',()=>{
+    clearInterval(tInt);tRun=false;tRem=0;tDisp.classList.remove('run','done');tDisp.textContent='00:00:00';
+    ['t-h','t-m','t-s'].forEach(id=>document.getElementById(id).value=0);
+    document.getElementById('t-inputs').style.opacity='';document.getElementById('t-inputs').style.pointerEvents='';
+    document.getElementById('timer-pause').disabled=true;
+  });
+
+  // ── MULTI TIMER ──
+  let mts=[];
+  function addMT(){mts.push({id:Date.now(),name:'Timer '+(mts.length+1),rem:0,run:false,int:null});renderMT();}
+  function renderMT(){
+    const list=document.getElementById('mt-list');
+    if(!mts.length){list.innerHTML='<div style="text-align:center;color:var(--text3);font-size:.8rem;padding:1.5rem">Klik "+ Tambah Timer" buat mulai.</div>';return;}
+    list.innerHTML=mts.map(mt=>{
+      const r=mt.rem||0;
+      return`<div class="mt-item ${mt.run?'run':''}" id="mti-${mt.id}">
+        <div class="mt-top">
+          <input class="mt-name" value="${mt.name}" placeholder="Nama timer..." oninput="mts.find(x=>x.id==${mt.id}).name=this.value">
+          <div class="mt-disp ${mt.run?'run':''}" id="mtd-${mt.id}">${pad(Math.floor(r/3600))}:${pad(Math.floor((r%3600)/60))}:${pad(r%60)}</div>
+        </div>
+        <div class="mt-inputs">
+          <div class="mt-grp"><label>Jam</label><input class="mt-num" id="mh-${mt.id}" type="number" min="0" max="99" value="0"></div>
+          <span class="mt-sep">:</span>
+          <div class="mt-grp"><label>Menit</label><input class="mt-num" id="mm-${mt.id}" type="number" min="0" max="59" value="5"></div>
+          <span class="mt-sep">:</span>
+          <div class="mt-grp"><label>Detik</label><input class="mt-num" id="ms-${mt.id}" type="number" min="0" max="59" value="0"></div>
+        </div>
+        <div class="mt-ctrl">
+          <button class="btn btn-p btn-sm" onclick="startMT(${mt.id})">▶ Mulai</button>
+          <button class="btn btn-g btn-sm" onclick="pauseMT(${mt.id})">⏸ Jeda</button>
+          <button class="btn btn-g btn-sm" onclick="resetMT(${mt.id})">↺ Reset</button>
+          <button class="btn btn-r btn-sm" onclick="deleteMT(${mt.id})">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  window.startMT=id=>{const mt=mts.find(x=>x.id===id);if(!mt||mt.run)return;if(!mt.rem){const h=+document.getElementById('mh-'+id).value||0,m=+document.getElementById('mm-'+id).value||0,s=+document.getElementById('ms-'+id).value||0;mt.rem=h*3600+m*60+s;}if(!mt.rem)return;mt.run=true;const item=document.getElementById('mti-'+id),disp=document.getElementById('mtd-'+id);if(item)item.classList.add('run');if(disp)disp.classList.add('run');mt.int=setInterval(()=>{mt.rem--;const d=document.getElementById('mtd-'+id);if(d)d.textContent=`${pad(Math.floor(mt.rem/3600))}:${pad(Math.floor((mt.rem%3600)/60))}:${pad(mt.rem%60)}`;if(mt.rem<=0){clearInterval(mt.int);mt.run=false;const item=document.getElementById('mti-'+id),disp=document.getElementById('mtd-'+id);if(item){item.classList.remove('run');item.classList.add('done');}if(disp){disp.classList.remove('run');disp.classList.add('done');}playDone();showToast(`⏰ "${mt.name}" selesai!`);}},1000);};
+  window.pauseMT=id=>{const mt=mts.find(x=>x.id===id);if(!mt)return;clearInterval(mt.int);mt.run=false;const i=document.getElementById('mti-'+id),d=document.getElementById('mtd-'+id);if(i)i.classList.remove('run');if(d)d.classList.remove('run');};
+  window.resetMT=id=>{const mt=mts.find(x=>x.id===id);if(!mt)return;clearInterval(mt.int);mt.run=false;mt.rem=0;const i=document.getElementById('mti-'+id),d=document.getElementById('mtd-'+id);if(i){i.classList.remove('run','done');}if(d){d.classList.remove('run','done');d.textContent='00:00:00';}};
+  window.deleteMT=id=>{const mt=mts.find(x=>x.id===id);if(mt&&mt.int)clearInterval(mt.int);mts=mts.filter(x=>x.id!==id);renderMT();};
+  document.getElementById('add-mt').addEventListener('click',addMT);
+
+  // ── STOPWATCH ──
+  let swInt=null,swRun=false,swEl=0,swLapT=0,swLaps=[];
+  const swDisp=document.getElementById('sw-d'),swMs=document.getElementById('sw-ms');
+  function fmtSw(v){const h=Math.floor(v/360000),m=Math.floor((v%360000)/6000),s=Math.floor((v%6000)/100),ms=v%100;return`${pad(h)}:${pad(m)}:${pad(s)}.${pad(ms)}`;}
+  function updSw(){const h=Math.floor(swEl/360000),m=Math.floor((swEl%360000)/6000),s=Math.floor((swEl%6000)/100),ms=swEl%100;swDisp.childNodes[0].textContent=`${pad(h)}:${pad(m)}:${pad(s)}`;swMs.textContent=`.${pad(ms)}`;}
+  document.getElementById('sw-start').addEventListener('click',()=>{if(swRun)return;swRun=true;document.getElementById('sw-start').disabled=true;document.getElementById('sw-lap').disabled=false;swDisp.classList.add('run');swInt=setInterval(()=>{swEl++;updSw();},10);});
+  document.getElementById('sw-lap').addEventListener('click',()=>{if(!swRun)return;swLaps.push({total:swEl,delta:swEl-swLapT});swLapT=swEl;renderLaps();});
+  document.getElementById('sw-reset').addEventListener('click',()=>{clearInterval(swInt);swRun=false;swEl=0;swLapT=0;swLaps=[];swDisp.classList.remove('run');swDisp.childNodes[0].textContent='00:00:00';swMs.textContent='.00';document.getElementById('sw-start').disabled=false;document.getElementById('sw-lap').disabled=true;renderLaps();});
+  document.getElementById('sw-clr').addEventListener('click',()=>{swLaps=[];swLapT=swEl;renderLaps();});
+  function renderLaps(){
+    const list=document.getElementById('laps-list');
+    if(!swLaps.length){list.innerHTML='<div style="text-align:center;color:var(--text3);font-size:.78rem;padding:1.2rem">Belum ada lap</div>';return;}
+    const ds=swLaps.map(l=>l.delta),fast=Math.min(...ds),slow=Math.max(...ds);
+    list.innerHTML=[...swLaps].reverse().map((l,ri)=>{const i=swLaps.length-1-ri;const cls=ds.length>1?(l.delta===fast?'fast':l.delta===slow?'slow':''):'';return`<div class="lap ${cls}"><span class="ln">Lap ${i+1}</span><span class="lt">${fmtSw(l.delta)}</span><span class="ld">${fmtSw(l.total)}</span></div>`;}).join('');
+  }
+</script>
+</body>
+</html>
